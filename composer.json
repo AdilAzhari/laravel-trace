@@ -1,18 +1,18 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "vendor-name/skeleton",
-    "description": "A Laravel package skeleton.",
+    "name": "adilazhari/laravel-trace",
+    "description": "Application-level tracing for Laravel applications.",
     "keywords": [
-        "vendor-name",
         "laravel",
-        "skeleton"
+        "adilazhari",
+        "laravel-trace"
     ],
-    "homepage": "https://github.com/vendor-name/skeleton",
+    "homepage": "https://github.com/adilazhari/laravel-trace",
     "license": "MIT",
     "authors": [
         {
-            "name": "Author Name",
-            "email": "author@example.com",
+            "name": "Adil Azhari",
+            "email": "adelazhry1997@gmail.com",
             "role": "Developer"
         }
     ],
@@ -35,24 +35,18 @@
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src/"
+            "LaravelTrace\\LaravelTrace\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests/",
+            "LaravelTrace\\LaravelTrace\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/",
             "Workbench\\Database\\Factories\\": "workbench/database/factories/",
             "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "scripts": {
-        "post-install-cmd": [
-            "@php configure.php"
-        ],
-        "post-update-cmd": [
-            "@php configure.php"
-        ],
         "post-autoload-dump": [
             "@clear",
             "@prepare"
@@ -96,10 +90,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
+                "LaravelTrace\\LaravelTrace\\LaravelTraceServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
+                "LaravelTrace": "LaravelTrace\\LaravelTrace\\Facades\\LaravelTrace"
             }
         }
     },
