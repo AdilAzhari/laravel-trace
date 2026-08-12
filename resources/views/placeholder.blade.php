@@ -1,1 +1,1 @@
-<div>Skeleton placeholder view.</div>
+<div>LaravelTrace placeholder view.</div>
