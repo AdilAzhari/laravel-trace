@@ -5,7 +5,7 @@ declare(strict_types=1);
 use LaravelTrace\LaravelTrace\Trace\Trace;
 use LaravelTrace\LaravelTrace\Trace\TraceStatus;
 
-it('starts a trace', function () {
+it('starts a trace', function (): void {
     $trace = Trace::start('CreateOrder');
 
     expect($trace->name)
@@ -16,7 +16,7 @@ it('starts a trace', function () {
         ->toBeNull();
 });
 
-it('generates a trace id when starting', function () {
+it('generates a trace id when starting', function (): void {
     $trace = Trace::start('CreateOrder');
 
     expect($trace->id->value)

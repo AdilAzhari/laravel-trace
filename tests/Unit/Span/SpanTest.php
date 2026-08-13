@@ -7,7 +7,7 @@ use LaravelTrace\LaravelTrace\Span\SpanStatus;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\TraceId;
 
-it('starts a span', function () {
+it('starts a span', function (): void {
     $traceId = TraceId::generate();
 
     $span = Span::start(
@@ -28,7 +28,7 @@ it('starts a span', function () {
         ->toBeNull();
 });
 
-it('can have a parent span', function () {
+it('can have a parent span', function (): void {
     $traceId = TraceId::generate();
 
     $parent = Span::start(

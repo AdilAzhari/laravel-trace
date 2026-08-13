@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use LaravelTrace\LaravelTrace\Trace\TraceId;
 
-it('generates a unique trace id', function () {
+it('generates a unique trace id', function (): void {
     $first = TraceId::generate();
     $second = TraceId::generate();
 
@@ -16,7 +16,7 @@ it('generates a unique trace id', function () {
         ->not->toBe($second->value);
 });
 
-it('can be converted to a string', function () {
+it('can be converted to a string', function (): void {
     $traceId = new TraceId('01K2ABC123');
 
     expect((string) $traceId)

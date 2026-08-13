@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use LaravelTrace\LaravelTrace\Span\SpanId;
 
-it('generates a unique span id', function () {
+it('generates a unique span id', function (): void {
     $first = SpanId::generate();
     $second = SpanId::generate();
 
@@ -16,7 +16,7 @@ it('generates a unique span id', function () {
         ->not->toBe($second->value);
 });
 
-it('can be converted to a string', function () {
+it('can be converted to a string', function (): void {
     $spanId = new SpanId('01K2SPAN123');
 
     expect((string) $spanId)

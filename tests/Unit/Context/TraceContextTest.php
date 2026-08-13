@@ -6,7 +6,7 @@ use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Span\SpanId;
 use LaravelTrace\LaravelTrace\Trace\TraceId;
 
-it('creates a context with a trace', function () {
+it('creates a context with a trace', function (): void {
     $traceId = TraceId::generate();
 
     $context = new TraceContext(
@@ -19,7 +19,7 @@ it('creates a context with a trace', function () {
         ->toBeNull();
 });
 
-it('can create a context for a span', function () {
+it('can create a context for a span', function (): void {
     $traceId = TraceId::generate();
     $spanId = SpanId::generate();
 
@@ -35,7 +35,7 @@ it('can create a context for a span', function () {
         ->toBe($spanId);
 });
 
-it('does not mutate the original context', function () {
+it('does not mutate the original context', function (): void {
     $traceId = TraceId::generate();
     $spanId = SpanId::generate();
 
