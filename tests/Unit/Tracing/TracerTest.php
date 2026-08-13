@@ -7,7 +7,7 @@ use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\TraceStatus;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
-it('starts a trace', function () {
+it('starts a trace', function (): void {
     $tracer = new Tracer;
 
     $trace = $tracer->start('CreateOrder');
@@ -18,7 +18,7 @@ it('starts a trace', function () {
         ->toBe(TraceStatus::Running);
 });
 
-it('starts a span inside a trace', function () {
+it('starts a span inside a trace', function (): void {
     $tracer = new Tracer;
 
     $trace = $tracer->start('CreateOrder');
