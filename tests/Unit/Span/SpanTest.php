@@ -82,12 +82,20 @@ it('fails a span', function () {
 
     $finishedAt = new DateTimeImmutable;
 
-    $failed = $span->fail($finishedAt);
+    $exception = new RuntimeException(
+        'Inventory service failed',
+    );
+
+    $failed = $span->fail($exception,$finishedAt);
 
     expect($failed->status)
         ->toBe(SpanStatus::Failed)
         ->and($failed->finishedAt)
         ->toBe($finishedAt)
-        ->and($span->status)
-        ->toBe(SpanStatus::Running);
+        ->and($failed->error)
+        ->not->toBeNull()
+        ->and($failed->error?->type)
+        ->toBe(RuntimeException::class)
+        ->and($failed->error?->message)
+        ->toBe('Inventory service failed');
 });

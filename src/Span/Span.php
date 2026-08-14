@@ -6,6 +6,7 @@ namespace LaravelTrace\LaravelTrace\Span;
 
 use DateTimeImmutable;
 use LaravelTrace\LaravelTrace\Trace\TraceId;
+use Throwable;
 
 final readonly class Span
 {
@@ -18,6 +19,7 @@ final readonly class Span
         public SpanStatus $status,
         public DateTimeImmutable $startedAt,
         public ?DateTimeImmutable $finishedAt = null,
+        public ?SpanError $error = null,
     ) {}
 
     public static function start(
@@ -34,6 +36,37 @@ final readonly class Span
             type: $type,
             status: SpanStatus::Running,
             startedAt: new DateTimeImmutable,
+            error: null,
+        );
+    }
+
+    public function complete(DateTimeImmutable $finishedAt): self
+    {
+        return new self(
+            id: $this->id,
+            traceId: $this->traceId,
+            parentId: $this->parentId,
+            name: $this->name,
+            type: $this->type,
+            status: SpanStatus::Completed,
+            startedAt: $this->startedAt,
+            finishedAt: $finishedAt,
+            error: null,
+        );
+    }
+
+    public function fail(throwable $exception,DateTimeImmutable $finishedAt): self
+    {
+        return new self(
+            id: $this->id,
+            traceId: $this->traceId,
+            parentId: $this->parentId,
+            name: $this->name,
+            type: $this->type,
+            status: SpanStatus::Failed,
+            startedAt: $this->startedAt,
+            finishedAt: $finishedAt,
+            error: SpanError::fromThrowable($exception),
         );
     }
 }
