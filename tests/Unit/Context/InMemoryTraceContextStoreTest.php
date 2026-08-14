@@ -6,13 +6,13 @@ use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
 use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Trace\TraceId;
 
-it('returns null when no context exists', function () {
+it('returns null when no context exists', function (): void {
     $store = new InMemoryTraceContextStore;
 
     expect($store->get())->toBeNull();
 });
 
-it('stores and retrieves a context', function () {
+it('stores and retrieves a context', function (): void {
     $store = new InMemoryTraceContextStore;
 
     $context = new TraceContext(
@@ -24,7 +24,7 @@ it('stores and retrieves a context', function () {
     expect($store->get())->toBe($context);
 });
 
-it('can clear the current context', function () {
+it('can clear the current context', function (): void {
     $store = new InMemoryTraceContextStore;
 
     $context = new TraceContext(

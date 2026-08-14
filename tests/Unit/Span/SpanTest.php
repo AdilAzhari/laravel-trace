@@ -50,7 +50,7 @@ it('can have a parent span', function (): void {
         ->toBe($parent->id);
 });
 
-it('completes a span', function () {
+it('completes a span', function (): void {
     $traceId = TraceId::generate();
 
     $span = Span::start(
@@ -71,7 +71,7 @@ it('completes a span', function () {
         ->toBe(SpanStatus::Running);
 });
 
-it('fails a span', function () {
+it('fails a span', function (): void {
     $traceId = TraceId::generate();
 
     $span = Span::start(
@@ -86,7 +86,7 @@ it('fails a span', function () {
         'Inventory service failed',
     );
 
-    $failed = $span->fail($exception,$finishedAt);
+    $failed = $span->fail($exception, $finishedAt);
 
     expect($failed->status)
         ->toBe(SpanStatus::Failed)

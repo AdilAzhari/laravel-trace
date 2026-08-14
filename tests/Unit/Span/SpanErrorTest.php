@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use LaravelTrace\LaravelTrace\Span\SpanError;
 
-it('creates an error from a throwable', function () {
+it('creates an error from a throwable', function (): void {
     $exception = new RuntimeException(
         'Payment provider timed out',
     );
