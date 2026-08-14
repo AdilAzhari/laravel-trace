@@ -51,7 +51,7 @@ it('does not mutate the original context', function (): void {
 });
 
 it('sets the trace context when starting a trace', function () {
-    $store = new InMemoryTraceContextStore();
+    $store = new InMemoryTraceContextStore;
     $tracer = new Tracer($store);
 
     $trace = $tracer->start('CreateOrder');

@@ -49,3 +49,45 @@ it('can have a parent span', function (): void {
         ->and($child->parentId)
         ->toBe($parent->id);
 });
+
+it('completes a span', function () {
+    $traceId = TraceId::generate();
+
+    $span = Span::start(
+        traceId: $traceId,
+        name: 'ReserveInventory',
+        type: SpanType::Action,
+    );
+
+    $finishedAt = new DateTimeImmutable;
+
+    $completed = $span->complete($finishedAt);
+
+    expect($completed->status)
+        ->toBe(SpanStatus::Completed)
+        ->and($completed->finishedAt)
+        ->toBe($finishedAt)
+        ->and($span->status)
+        ->toBe(SpanStatus::Running);
+});
+
+it('fails a span', function () {
+    $traceId = TraceId::generate();
+
+    $span = Span::start(
+        traceId: $traceId,
+        name: 'ReserveInventory',
+        type: SpanType::Action,
+    );
+
+    $finishedAt = new DateTimeImmutable;
+
+    $failed = $span->fail($finishedAt);
+
+    expect($failed->status)
+        ->toBe(SpanStatus::Failed)
+        ->and($failed->finishedAt)
+        ->toBe($finishedAt)
+        ->and($span->status)
+        ->toBe(SpanStatus::Running);
+});

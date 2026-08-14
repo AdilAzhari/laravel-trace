@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
+use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
 use LaravelTrace\LaravelTrace\Span\SpanStatus;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\TraceStatus;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
-it('starts a trace', function (): void {
-    $tracer = new Tracer;
+it('starts a trace', function () {
+    $tracer = new Tracer(
+        new InMemoryTraceContextStore(),
+    );
 
     $trace = $tracer->start('CreateOrder');
 
@@ -18,16 +21,19 @@ it('starts a trace', function (): void {
         ->toBe(TraceStatus::Running);
 });
 
-it('starts a span inside a trace', function (): void {
-    $tracer = new Tracer;
+it('starts a span inside a trace', function () {
+    $tracer = new Tracer(
+        new InMemoryTraceContextStore(),
+    );
 
     $trace = $tracer->start('CreateOrder');
 
-    $span = $tracer->startSpan(
-        trace: $trace,
-        name: 'ReserveInventory',
-        type: SpanType::Action,
+    $scope = $tracer->span(
+        'ReserveInventory',
+        SpanType::Action,
     );
+
+    $span = $scope->span();
 
     expect($span->traceId)
         ->toBe($trace->id)

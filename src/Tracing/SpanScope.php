@@ -6,6 +6,7 @@ namespace LaravelTrace\LaravelTrace\Tracing;
 
 use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Span\Span;
+use Throwable;
 
 final class SpanScope
 {
@@ -22,16 +23,42 @@ final class SpanScope
         return $this->span;
     }
 
-    public function close(): void
+    public function close(): Span
     {
         if ($this->closed) {
-            return;
+            return $this->span;
         }
 
         $this->closed = true;
 
+        $completed = $this->tracer->complete(
+            $this->span,
+        );
+
         $this->tracer->setContext(
             $this->previousContext,
         );
+
+        return $completed;
+    }
+
+    public function fail(Throwable $exception): Span
+    {
+        if ($this->closed) {
+            return $this->span;
+        }
+
+        $this->closed = true;
+
+        $failed = $this->tracer->fail(
+            $this->span,
+            $exception,
+        );
+
+        $this->tracer->setContext(
+            $this->previousContext,
+        );
+
+        return $failed;
     }
 }
