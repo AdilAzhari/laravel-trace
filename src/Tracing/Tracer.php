@@ -12,6 +12,8 @@ use LaravelTrace\LaravelTrace\Span\Span;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\Trace;
 use LogicException;
+use RuntimeException;
+use Throwable;
 
 final readonly class Tracer implements TracerContract
 {
@@ -84,9 +86,10 @@ final readonly class Tracer implements TracerContract
         );
     }
 
-    public function fail(Span $span): Span
+    public function fail(Span $span,Throwable $exception,): Span
     {
         return $span->fail(
+            $exception,
             new DateTimeImmutable,
         );
     }
