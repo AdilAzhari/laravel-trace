@@ -6,19 +6,20 @@ namespace LaravelTrace\LaravelTrace\Tracing;
 
 use DateTimeImmutable;
 use LaravelTrace\LaravelTrace\Context\TraceContext;
+use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
 use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
 use LaravelTrace\LaravelTrace\Span\Span;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\Trace;
 use LogicException;
-use RuntimeException;
 use Throwable;
 
 final readonly class Tracer implements TracerContract
 {
     public function __construct(
         private TraceContextStore $contextStore,
+        private SpanRecorder $spanRecorder,
     ) {}
 
     public function start(string $name): Trace
@@ -81,16 +82,26 @@ final readonly class Tracer implements TracerContract
 
     public function complete(Span $span): Span
     {
-        return $span->complete(
+        $completed = $span->complete(
             new DateTimeImmutable,
         );
+
+        $this->spanRecorder->record($completed);
+
+        return $completed;
     }
 
-    public function fail(Span $span,Throwable $exception,): Span
-    {
-        return $span->fail(
-            $exception,
-            new DateTimeImmutable,
+    public function fail(
+        Span $span,
+        Throwable $exception,
+    ): Span {
+        $failed = $span->fail(
+            exception: $exception,
+            finishedAt: new DateTimeImmutable,
         );
+
+        $this->spanRecorder->record($failed);
+
+        return $failed;
     }
 }

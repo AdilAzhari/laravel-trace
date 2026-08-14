@@ -6,6 +6,7 @@ use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
 use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Span\SpanId;
 use LaravelTrace\LaravelTrace\Trace\TraceId;
+use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
 it('creates a context with a trace', function (): void {
@@ -50,9 +51,10 @@ it('does not mutate the original context', function (): void {
         ->toBe($spanId);
 });
 
-it('sets the trace context when starting a trace', function () {
+it('sets the trace context when starting a trace', function (): void {
     $store = new InMemoryTraceContextStore;
-    $tracer = new Tracer($store);
+    $record = new InMemorySpanRecorder;
+    $tracer = new Tracer($store, $record);
 
     $trace = $tracer->start('CreateOrder');
 

@@ -13,8 +13,7 @@ final readonly class SpanError
         public string $message,
         public ?string $file,
         public ?int $line,
-    ) {
-    }
+    ) {}
 
     public static function fromThrowable(Throwable $exception): self
     {
