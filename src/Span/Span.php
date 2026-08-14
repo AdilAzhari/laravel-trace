@@ -55,7 +55,7 @@ final readonly class Span
         );
     }
 
-    public function fail(throwable $exception,DateTimeImmutable $finishedAt): self
+    public function fail(Throwable $exception, DateTimeImmutable $finishedAt): self
     {
         return new self(
             id: $this->id,
