@@ -16,38 +16,41 @@ final readonly class Tracer implements TracerContract
 {
     public function __construct(
         private TraceContextStore $contextStore,
-    ) {
-    }
+    ) {}
 
     public function start(string $name): Trace
     {
         return Trace::start($name);
     }
 
-    public function startSpan(
+    public function span(
         string $name,
         SpanType $type,
-    ): Span {
-        $context = $this->context();
+    ): SpanScope {
+        $previousContext = $this->context();
 
-        if ($context === null) {
+        if ($previousContext === null) {
             throw new LogicException(
                 'Cannot start a span without an active trace.',
             );
         }
 
         $span = Span::start(
-            traceId: $context->traceId,
+            traceId: $previousContext->traceId,
             name: $name,
             type: $type,
-            parentId: $context->spanId,
+            parentId: $previousContext->spanId,
         );
 
         $this->setContext(
-            $context->withSpan($span->id),
+            $previousContext->withSpan($span->id),
         );
 
-        return $span;
+        return new SpanScope(
+            span: $span,
+            previousContext: $previousContext,
+            tracer: $this,
+        );
     }
 
     public function context(): ?TraceContext
