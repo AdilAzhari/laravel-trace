@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelTrace\LaravelTrace\Tracing;
 
+use DateTimeImmutable;
 use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
@@ -20,7 +21,15 @@ final readonly class Tracer implements TracerContract
 
     public function start(string $name): Trace
     {
-        return Trace::start($name);
+        $trace = Trace::start($name);
+
+        $this->setContext(
+            new TraceContext(
+                traceId: $trace->id,
+            ),
+        );
+
+        return $trace;
     }
 
     public function span(
@@ -66,5 +75,19 @@ final readonly class Tracer implements TracerContract
     public function clearContext(): void
     {
         $this->contextStore->clear();
+    }
+
+    public function complete(Span $span): Span
+    {
+        return $span->complete(
+            new DateTimeImmutable,
+        );
+    }
+
+    public function fail(Span $span): Span
+    {
+        return $span->fail(
+            new DateTimeImmutable,
+        );
     }
 }
