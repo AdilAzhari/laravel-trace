@@ -11,4 +11,5 @@ enum SpanType: string
     case Event = 'event';
     case Listener = 'listener';
     case Job = 'job';
+    case Database = 'database';
 }

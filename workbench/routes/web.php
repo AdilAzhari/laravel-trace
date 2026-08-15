@@ -51,7 +51,7 @@ Route::post('/trace-test', function () {
     ]);
 })->middleware(TraceRequest::class);
 
-Route::post('/trace-test-failure', function () {
+Route::post('/trace-test-failure', function (): void {
     $tracer = app(Tracer::class);
 
     $scope = $tracer->span(
@@ -68,7 +68,7 @@ Route::post('/trace-test-failure', function () {
     }
 })->middleware(TraceRequest::class);
 
-Route::post('/trace-test-failure', function () {
+Route::post('/trace-test-failure', function (): void {
     $tracer = app(Tracer::class);
 
     expect($tracer->context())
