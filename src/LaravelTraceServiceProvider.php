@@ -6,6 +6,12 @@ namespace LaravelTrace\LaravelTrace;
 
 use Illuminate\Support\ServiceProvider;
 use LaravelTrace\LaravelTrace\Console\Commands\LaravelTraceCommand;
+use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
+use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
+use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
+use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
+use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
 class LaravelTraceServiceProvider extends ServiceProvider
 {
@@ -14,9 +20,36 @@ class LaravelTraceServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/laravel-trace.php', 'laravel-trace');
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/laravel-trace.php',
+            'laravel-trace',
+        );
 
         $this->app->singleton(LaravelTrace::class);
+
+        $this->app->singleton(
+            TraceContextStore::class,
+            InMemoryTraceContextStore::class,
+        );
+
+        $this->app->singleton(InMemorySpanRecorder::class);
+
+        $this->app->singleton(
+            SpanRecorder::class,
+            fn ($app): SpanRecorder => $app->make(
+                InMemorySpanRecorder::class,
+            ),
+        );
+
+        $this->app->singleton(
+            TracerContract::class,
+            function ($app): Tracer {
+                return new Tracer(
+                    contextStore: $app->make(TraceContextStore::class),
+                    spanRecorder: $app->make(SpanRecorder::class),
+                );
+            },
+        );
     }
 
     /**
@@ -24,7 +57,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->loadRoutesFrom(__DIR__.'/../routes/laravel-trace.php');
+        $this->loadRoutesFrom(__DIR__.'/../workbench/routes/web.php');
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'laravel-trace');
 
