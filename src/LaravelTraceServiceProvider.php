@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace LaravelTrace\LaravelTrace;
 
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use LaravelTrace\LaravelTrace\Console\Commands\LaravelTraceCommand;
 use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
 use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
+use LaravelTrace\LaravelTrace\Tracing\DatabaseQueryListener;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
@@ -41,6 +44,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
             ),
         );
 
+        $this->app->singleton(DatabaseQueryListener::class);
         $this->app->singleton(
             TracerContract::class,
             function ($app): Tracer {
@@ -67,6 +71,10 @@ class LaravelTraceServiceProvider extends ServiceProvider
             return;
         }
 
+        Event::listen(
+            QueryExecuted::class,
+            DatabaseQueryListener::class,
+        );
         $this->publishes([
             __DIR__.'/../config/laravel-trace.php' => config_path('laravel-trace.php'),
         ], ['laravel-trace', 'laravel-trace-config']);

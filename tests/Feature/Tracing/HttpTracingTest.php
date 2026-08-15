@@ -35,7 +35,7 @@ declare(strict_types=1);
 // use LaravelTrace\LaravelTrace\Tracing\Tracer;
 use LaravelTrace\LaravelTrace\Contracts\Tracer;
 
-it('starts a trace for an http request', function () {
+it('starts a trace for an http request', function (): void {
     $tracer = app(Tracer::class);
 
     $response = $this->postJson('/trace-test');
@@ -46,7 +46,7 @@ it('starts a trace for an http request', function () {
         ->toBeNull();
 });
 
-it('clears tracing context when the request fails', function () {
+it('clears tracing context when the request fails', function (): void {
     $tracer = app(Tracer::class);
 
     $this->postJson('/trace-test-failure')

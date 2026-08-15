@@ -16,6 +16,10 @@ final readonly class Span
         public ?SpanId $parentId,
         public string $name,
         public SpanType $type,
+
+        /** @var array<string, scalar|null> */
+        public array $attributes,
+
         public SpanStatus $status,
         public DateTimeImmutable $startedAt,
         public ?DateTimeImmutable $finishedAt = null,
@@ -27,6 +31,7 @@ final readonly class Span
         string $name,
         SpanType $type,
         ?SpanId $parentId = null,
+        array $attributes = [],
     ): self {
         return new self(
             id: SpanId::generate(),
@@ -34,6 +39,7 @@ final readonly class Span
             parentId: $parentId,
             name: $name,
             type: $type,
+            attributes: $attributes,
             status: SpanStatus::Running,
             startedAt: new DateTimeImmutable,
             error: null,
@@ -48,6 +54,7 @@ final readonly class Span
             parentId: $this->parentId,
             name: $this->name,
             type: $this->type,
+            attributes: $this->attributes,
             status: SpanStatus::Completed,
             startedAt: $this->startedAt,
             finishedAt: $finishedAt,
@@ -63,6 +70,7 @@ final readonly class Span
             parentId: $this->parentId,
             name: $this->name,
             type: $this->type,
+            attributes: $this->attributes,
             status: SpanStatus::Failed,
             startedAt: $this->startedAt,
             finishedAt: $finishedAt,
