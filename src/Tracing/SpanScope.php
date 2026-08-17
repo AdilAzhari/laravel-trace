@@ -31,7 +31,7 @@ final class SpanScope
 
         $this->closed = true;
 
-        $completed = $this->tracer->complete(
+        $completed = $this->tracer->completeSpan(
             $this->span,
         );
 
@@ -50,7 +50,7 @@ final class SpanScope
 
         $this->closed = true;
 
-        $failed = $this->tracer->fail(
+        $failed = $this->tracer->failSpan(
             $this->span,
             $exception,
         );

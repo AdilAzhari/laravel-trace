@@ -12,8 +12,10 @@ use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
 use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
+use LaravelTrace\LaravelTrace\Contracts\TraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\DatabaseQueryListener;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
 class LaravelTraceServiceProvider extends ServiceProvider
@@ -44,6 +46,15 @@ class LaravelTraceServiceProvider extends ServiceProvider
             ),
         );
 
+        $this->app->singleton(InMemoryTraceRecorder::class);
+
+        $this->app->singleton(
+            TraceRecorder::class,
+            fn ($app): TraceRecorder => $app->make(
+                InMemoryTraceRecorder::class,
+            ),
+        );
+
         $this->app->singleton(DatabaseQueryListener::class);
         $this->app->singleton(
             TracerContract::class,
@@ -51,6 +62,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
                 return new Tracer(
                     contextStore: $app->make(TraceContextStore::class),
                     spanRecorder: $app->make(SpanRecorder::class),
+                    traceRecorder: $app->make(TraceRecorder::class),
                 );
             },
         );

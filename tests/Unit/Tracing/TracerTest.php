@@ -7,6 +7,7 @@ use LaravelTrace\LaravelTrace\Span\SpanStatus;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\TraceStatus;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
 it('starts a trace', function (): void {
@@ -15,6 +16,7 @@ it('starts a trace', function (): void {
     $tracer = new Tracer(
         new InMemoryTraceContextStore,
         $recorder,
+        new InMemoryTraceRecorder,
     );
 
     $trace = $tracer->start('CreateOrder');
@@ -30,6 +32,7 @@ it('starts a span inside a trace', function (): void {
     $tracer = new Tracer(
         new InMemoryTraceContextStore,
         $recorder,
+        new InMemoryTraceRecorder,
     );
 
     $trace = $tracer->start('CreateOrder');
@@ -57,6 +60,7 @@ it('records a completed span', function (): void {
     $tracer = new Tracer(
         new InMemoryTraceContextStore,
         $recorder,
+        new InMemoryTraceRecorder,
     );
 
     $tracer->start('CreateOrder');
@@ -80,6 +84,7 @@ it('records a failed span', function (): void {
     $tracer = new Tracer(
         new InMemoryTraceContextStore,
         $recorder,
+        new InMemoryTraceRecorder,
     );
 
     $tracer->start('CreateOrder');
@@ -101,4 +106,62 @@ it('records a failed span', function (): void {
         ->toBe($failed)
         ->and($failed->status)
         ->toBe(SpanStatus::Failed);
+});
+
+it('starts a span with attributes', function (): void {
+    $tracer = app(Tracer::class);
+
+    $tracer->start('OrderCreated');
+
+    $scope = $tracer->span(
+        'database.query',
+        SpanType::Database,
+        [
+            'db.connection' => 'mysql',
+            'db.duration_ms' => 4.2,
+        ],
+    );
+
+    $span = $scope->close();
+
+    expect($span->attributes)
+        ->toBe([
+            'db.connection' => 'mysql',
+            'db.duration_ms' => 4.2,
+        ]);
+});
+
+it('records a completed trace', function (): void {
+    $tracer = app(Tracer::class);
+
+    $trace = $tracer->start('CreateOrder');
+
+    $completed = $tracer->completeTrace($trace);
+
+    expect($completed->status)
+        ->toBe(TraceStatus::Completed)
+        ->and(app(InMemoryTraceRecorder::class)->all())
+        ->toHaveCount(1)
+        ->and(app(InMemoryTraceRecorder::class)->all()[0]->id)
+        ->toBe($trace->id);
+});
+
+it('records a failed trace', function (): void {
+    $tracer = app(Tracer::class);
+
+    $trace = $tracer->start('CreateOrder');
+
+    $exception = new RuntimeException('Something failed.');
+
+    $failed = $tracer->failTrace(
+        $trace,
+        $exception,
+    );
+
+    expect($failed->status)
+        ->toBe(TraceStatus::Failed)
+        ->and(app(InMemoryTraceRecorder::class)->all())
+        ->toHaveCount(1)
+        ->and(app(InMemoryTraceRecorder::class)->all()[0]->status)
+        ->toBe(TraceStatus::Failed);
 });

@@ -61,7 +61,7 @@ it('completes a span', function (): void {
 
     $finishedAt = new DateTimeImmutable;
 
-    $completed = $span->complete($finishedAt);
+    $completed = $span->completeSpan($finishedAt);
 
     expect($completed->status)
         ->toBe(SpanStatus::Completed)
@@ -78,6 +78,7 @@ it('fails a span', function (): void {
         traceId: $traceId,
         name: 'ReserveInventory',
         type: SpanType::Action,
+        attributes: [],
     );
 
     $finishedAt = new DateTimeImmutable;
@@ -86,7 +87,7 @@ it('fails a span', function (): void {
         'Inventory service failed',
     );
 
-    $failed = $span->fail($exception, $finishedAt);
+    $failed = $span->failSpan($exception, $finishedAt);
 
     expect($failed->status)
         ->toBe(SpanStatus::Failed)

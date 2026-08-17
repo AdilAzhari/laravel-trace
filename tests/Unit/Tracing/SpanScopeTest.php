@@ -8,12 +8,13 @@ use LaravelTrace\LaravelTrace\Span\SpanStatus;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\TraceId;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
 it('restores the previous context when closed', function (): void {
     $store = new InMemoryTraceContextStore;
     $record = new InMemorySpanRecorder;
-    $tracer = new Tracer($store, $record);
+    $tracer = new Tracer($store, $record, new InMemoryTraceRecorder);
 
     $tracer->start('CreateOrder');
 
@@ -41,7 +42,7 @@ it('restores the previous context when closed', function (): void {
 it('fails a span and restores the previous context', function (): void {
     $store = new InMemoryTraceContextStore;
     $record = new InMemorySpanRecorder;
-    $tracer = new Tracer($store, $record);
+    $tracer = new Tracer($store, $record, new InMemoryTraceRecorder);
 
     $tracer->start('CreateOrder');
 
@@ -82,7 +83,7 @@ it('does not retain an error when completing a span', function (): void {
         type: SpanType::Action,
     );
 
-    $completed = $span->complete(
+    $completed = $span->completeSpan(
         new DateTimeImmutable,
     );
 

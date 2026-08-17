@@ -9,6 +9,7 @@ use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
 use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
+use LaravelTrace\LaravelTrace\Contracts\TraceRecorder;
 use LaravelTrace\LaravelTrace\Span\Span;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Trace\Trace;
@@ -20,6 +21,7 @@ final readonly class Tracer implements TracerContract
     public function __construct(
         private TraceContextStore $contextStore,
         private SpanRecorder $spanRecorder,
+        private TraceRecorder $traceRecorder,
     ) {}
 
     public function start(string $name): Trace
@@ -38,6 +40,7 @@ final readonly class Tracer implements TracerContract
     public function span(
         string $name,
         SpanType $type,
+        array $attributes = [],
     ): SpanScope {
         $previousContext = $this->context();
 
@@ -52,6 +55,7 @@ final readonly class Tracer implements TracerContract
             name: $name,
             type: $type,
             parentId: $previousContext->spanId,
+            attributes: $attributes,
         );
 
         $this->setContext(
@@ -80,9 +84,16 @@ final readonly class Tracer implements TracerContract
         $this->contextStore->clear();
     }
 
-    public function complete(Span $span): Span
+    public function record(Span $span): Span
     {
-        $completed = $span->complete(
+        $this->spanRecorder->record($span);
+
+        return $span;
+    }
+
+    public function completeSpan(Span $span): Span
+    {
+        $completed = $span->completeSpan(
             new DateTimeImmutable,
         );
 
@@ -91,16 +102,41 @@ final readonly class Tracer implements TracerContract
         return $completed;
     }
 
-    public function fail(
+    public function failSpan(
         Span $span,
         Throwable $exception,
     ): Span {
-        $failed = $span->fail(
+        $failed = $span->failSpan(
             exception: $exception,
             finishedAt: new DateTimeImmutable,
         );
 
         $this->spanRecorder->record($failed);
+
+        return $failed;
+    }
+
+    public function completeTrace(Trace $trace): Trace
+    {
+        $completed = $trace->complete(
+            new DateTimeImmutable,
+        );
+
+        $this->traceRecorder->record($completed);
+
+        return $completed;
+    }
+
+    public function failTrace(
+        Trace $trace,
+        Throwable $exception,
+    ): Trace {
+        $failed = $trace->fail(
+            exception: $exception,
+            finishedAt: new DateTimeImmutable,
+        );
+
+        $this->traceRecorder->record($failed);
 
         return $failed;
     }

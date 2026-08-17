@@ -16,15 +16,22 @@ final readonly class DatabaseQueryListener
 
     public function handle(QueryExecuted $event): void
     {
-        $context = $this->tracer->context();
+        if (! config('laravel-trace.database.enabled', true)) {
+            return;
+        }
 
-        if ($context === null) {
+        if ($this->tracer->context() === null) {
             return;
         }
 
         $scope = $this->tracer->span(
             name: 'database.query',
             type: SpanType::Database,
+            attributes: [
+                'db.connection' => $event->connectionName,
+                'db.duration_ms' => $event->time,
+                'db.sql' => $event->sql,
+            ],
         );
 
         $scope->close();
