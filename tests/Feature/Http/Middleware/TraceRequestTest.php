@@ -7,6 +7,7 @@ use Illuminate\Http\Response;
 use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
 use LaravelTrace\LaravelTrace\Http\Middleware\TraceRequest;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
 /**
@@ -18,6 +19,7 @@ it('starts a trace for an http request', function (): void {
     $tracer = new Tracer(
         $store,
         new InMemorySpanRecorder,
+        new InMemoryTraceRecorder,
     );
 
     $middleware = new TraceRequest($tracer);
@@ -51,6 +53,7 @@ it('clears the trace context when the request fails', function (): void {
     $tracer = new Tracer(
         $store,
         new InMemorySpanRecorder,
+        new InMemoryTraceRecorder,
     );
 
     $middleware = new TraceRequest($tracer);

@@ -32,6 +32,7 @@ final readonly class Span
         SpanType $type,
         ?SpanId $parentId = null,
         array $attributes = [],
+        ?DateTimeImmutable $startedAt = null,
     ): self {
         return new self(
             id: SpanId::generate(),
@@ -41,12 +42,12 @@ final readonly class Span
             type: $type,
             attributes: $attributes,
             status: SpanStatus::Running,
-            startedAt: new DateTimeImmutable,
+            startedAt: $startedAt ?? new DateTimeImmutable,
             error: null,
         );
     }
 
-    public function complete(DateTimeImmutable $finishedAt): self
+    public function completeSpan(DateTimeImmutable $finishedAt): self
     {
         return new self(
             id: $this->id,
@@ -62,7 +63,7 @@ final readonly class Span
         );
     }
 
-    public function fail(Throwable $exception, DateTimeImmutable $finishedAt): self
+    public function failSpan(Throwable $exception, DateTimeImmutable $finishedAt): self
     {
         return new self(
             id: $this->id,
@@ -75,6 +76,29 @@ final readonly class Span
             startedAt: $this->startedAt,
             finishedAt: $finishedAt,
             error: SpanError::fromThrowable($exception),
+        );
+    }
+
+    public static function completed(
+        TraceId $traceId,
+        string $name,
+        SpanType $type,
+        DateTimeImmutable $startedAt,
+        DateTimeImmutable $finishedAt,
+        ?SpanId $parentId = null,
+        array $attributes = [],
+    ): self {
+        return new self(
+            id: SpanId::generate(),
+            traceId: $traceId,
+            parentId: $parentId,
+            name: $name,
+            type: $type,
+            attributes: $attributes,
+            status: SpanStatus::Completed,
+            startedAt: $startedAt,
+            finishedAt: $finishedAt,
+            error: null,
         );
     }
 }

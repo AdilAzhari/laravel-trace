@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelTrace\LaravelTrace\Contracts;
 
-use LaravelTrace\LaravelTrace\Span\Span;
+use LaravelTrace\LaravelTrace\Trace\Trace;
 
 interface TraceRecorder
 {
-    public function record(Span $span): void;
+    public function record(Trace $trace): void;
 }

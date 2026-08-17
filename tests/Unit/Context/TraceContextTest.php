@@ -7,6 +7,7 @@ use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Span\SpanId;
 use LaravelTrace\LaravelTrace\Trace\TraceId;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 
 it('creates a context with a trace', function (): void {
@@ -54,7 +55,7 @@ it('does not mutate the original context', function (): void {
 it('sets the trace context when starting a trace', function (): void {
     $store = new InMemoryTraceContextStore;
     $record = new InMemorySpanRecorder;
-    $tracer = new Tracer($store, $record);
+    $tracer = new Tracer($store, $record, new InMemoryTraceRecorder);
 
     $trace = $tracer->start('CreateOrder');
 
