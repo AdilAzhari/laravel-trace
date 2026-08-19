@@ -92,3 +92,39 @@ it('does not retain an error when completing a span', function (): void {
         ->and($completed->error)
         ->toBeNull();
 });
+
+it('adds attributes to a span before closing', function () {
+    $contextStore = new InMemoryTraceContextStore();
+    $spanRecorder = new InMemorySpanRecorder();
+    $traceRecorder = new InMemoryTraceRecorder();
+
+    $tracer = new Tracer(
+        contextStore: $contextStore,
+        spanRecorder: $spanRecorder,
+        traceRecorder: $traceRecorder,
+    );
+
+    $tracer->start('test');
+
+    $scope = $tracer->span(
+        name: 'http.request',
+        type: SpanType::Http,
+        attributes: [
+            'http.method' => 'GET',
+        ],
+    );
+
+    $scope->attributes([
+        'http.status_code' => 200,
+    ]);
+
+    $scope->close();
+
+    $span = $spanRecorder->all()[0];
+
+    expect($span->attributes)
+        ->toMatchArray([
+            'http.method' => 'GET',
+            'http.status_code' => 200,
+        ]);
+});

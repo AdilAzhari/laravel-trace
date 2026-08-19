@@ -37,55 +37,13 @@ Route::post('/trace-test/nested', function () {
 })->middleware(TraceRequest::class);
 
 Route::post('/trace-test', function () {
-    $tracer = app(Tracer::class);
-
-    $scope = $tracer->span(
-        'business.operation',
-        SpanType::Action,
-    );
-
-    $scope->close();
-
     return response()->json([
         'ok' => true,
     ]);
 })->middleware(TraceRequest::class);
 
 Route::post('/trace-test-failure', function (): void {
-    $tracer = app(Tracer::class);
-
-    $scope = $tracer->span(
-        'business.operation',
-        SpanType::Action,
-    );
-
-    try {
-        throw new RuntimeException('Something failed.');
-    } catch (Throwable $exception) {
-        $scope->fail($exception);
-
-        throw $exception;
-    }
-})->middleware(TraceRequest::class);
-
-Route::post('/trace-test-failure', function (): void {
-    $tracer = app(Tracer::class);
-
-    expect($tracer->context())
-        ->not->toBeNull();
-
-    $scope = $tracer->span(
-        'business.operation',
-        SpanType::Action,
-    );
-
-    try {
-        throw new RuntimeException('Something failed.');
-    } catch (Throwable $exception) {
-        $scope->fail($exception);
-
-        throw $exception;
-    }
+    throw new RuntimeException('Something failed.');
 })->middleware(TraceRequest::class);
 
 Route::post('/trace-test/deep', function () {

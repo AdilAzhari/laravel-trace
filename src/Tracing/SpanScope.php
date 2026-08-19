@@ -13,7 +13,7 @@ final class SpanScope
     private bool $closed = false;
 
     public function __construct(
-        private readonly Span $span,
+        private Span $span,
         private readonly TraceContext $previousContext,
         private readonly Tracer $tracer,
     ) {}
@@ -60,5 +60,29 @@ final class SpanScope
         );
 
         return $failed;
+    }
+
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
+    public function attributes(array $attributes): self
+    {
+        if ($this->closed) {
+            return $this;
+        }
+
+        $this->span = $this->span->withAttributes($attributes);
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
+    public function addAttributes(array $attributes): self
+    {
+        $this->span = $this->span->withAttributes($attributes);
+
+        return $this;
     }
 }

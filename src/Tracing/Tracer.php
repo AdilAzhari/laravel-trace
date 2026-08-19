@@ -24,9 +24,9 @@ final readonly class Tracer implements TracerContract
         private TraceRecorder $traceRecorder,
     ) {}
 
-    public function start(string $name): Trace
+    public function start(string $name, array $attributes = []): Trace
     {
-        $trace = Trace::start($name);
+        $trace = Trace::start($name, $attributes);
 
         $this->setContext(
             new TraceContext(

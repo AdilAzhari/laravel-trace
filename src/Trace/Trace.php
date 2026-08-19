@@ -16,19 +16,22 @@ final readonly class Trace
         public DateTimeImmutable $startedAt,
         public ?DateTimeImmutable $finishedAt = null,
         public ?TraceError $error = null,
+        /** @var array<string, string|int|float|bool|null> */
+        public array $attributes = [],
     ) {}
 
-    public static function start(string $name): self
+    public static function start(string $name, array $attributes = []): self
     {
         return new self(
             id: TraceId::generate(),
             name: $name,
             status: TraceStatus::Running,
             startedAt: new DateTimeImmutable,
+            attributes: $attributes,
         );
     }
 
-    public function complete(DateTimeImmutable $finishedAt): self
+    public function complete(DateTimeImmutable $finishedAt, array $attributes = []): self
     {
         return new self(
             id: $this->id,
@@ -37,12 +40,14 @@ final readonly class Trace
             startedAt: $this->startedAt,
             finishedAt: $finishedAt,
             error: null,
+            attributes: $attributes,
         );
     }
 
     public function fail(
         Throwable $exception,
         DateTimeImmutable $finishedAt,
+        array $attributes = [],
     ): self {
         return new self(
             id: $this->id,
@@ -51,6 +56,23 @@ final readonly class Trace
             startedAt: $this->startedAt,
             finishedAt: $finishedAt,
             error: TraceError::fromThrowable($exception),
+            attributes: $attributes,
+        );
+    }
+
+    public function withAttributes(array $attributes): self
+    {
+        return new self(
+            id: $this->id,
+            name: $this->name,
+            status: $this->status,
+            startedAt: $this->startedAt,
+            finishedAt: $this->finishedAt,
+            error: $this->error,
+            attributes: [
+                ...$this->attributes,
+                ...$attributes,
+            ],
         );
     }
 }

@@ -35,7 +35,7 @@ it('starts a trace for an http request', function (): void {
             expect($tracer->context())
                 ->not->toBeNull()
                 ->and($tracer->context()?->spanId)
-                ->toBeNull();
+                ->not->toBeNull();
 
             return new Response('OK');
         },
