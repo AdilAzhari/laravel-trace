@@ -55,7 +55,19 @@ class LaravelTraceServiceProvider extends ServiceProvider
             ),
         );
 
-        $this->app->singleton(DatabaseQueryListener::class);
+        $this->app->singleton(
+            DatabaseQueryListener::class,
+            function ($app): DatabaseQueryListener {
+                return new DatabaseQueryListener(
+                    tracer: $app->make(TracerContract::class),
+                    enabled: (bool) $app->make('config')->get(
+                        'laravel-trace.database.enabled',
+                        true,
+                    ),
+                );
+            },
+        );
+
         $this->app->singleton(
             TracerContract::class,
             function ($app): Tracer {

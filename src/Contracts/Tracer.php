@@ -12,7 +12,7 @@ use Throwable;
 
 interface Tracer
 {
-    public function start(string $name): Trace;
+    public function start(string $name, array $attributes): Trace;
 
     public function Span(
         string $name,

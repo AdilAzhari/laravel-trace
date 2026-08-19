@@ -70,3 +70,42 @@ it('fails a trace', function (): void {
         ->and($failed->error?->message)
         ->toBe('Something failed.');
 });
+
+it('starts a trace with attributes', function (): void {
+    $trace = Trace::start(
+        name: 'http.request',
+        attributes: [
+            'http.method' => 'GET',
+            'http.path' => '/users',
+        ],
+    );
+
+    expect($trace->attributes)
+        ->toMatchArray([
+            'http.method' => 'GET',
+            'http.path' => '/users',
+        ]);
+});
+
+it('can add attributes without mutating the original trace', function (): void {
+    $trace = Trace::start(
+        name: 'http.request',
+        attributes: [
+            'http.method' => 'GET',
+        ],
+    );
+
+    $updated = $trace->withAttributes([
+        'http.status_code' => 200,
+    ]);
+
+    expect($trace->attributes)
+        ->toBe([
+            'http.method' => 'GET',
+        ])
+        ->and($updated->attributes)
+        ->toBe([
+            'http.method' => 'GET',
+            'http.status_code' => 200,
+        ]);
+});

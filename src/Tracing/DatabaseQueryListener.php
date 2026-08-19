@@ -12,11 +12,12 @@ final readonly class DatabaseQueryListener
 {
     public function __construct(
         private Tracer $tracer,
+        private bool $enabled,
     ) {}
 
     public function handle(QueryExecuted $event): void
     {
-        if (! config('laravel-trace.database.enabled', true)) {
+        if (! $this->enabled) {
             return;
         }
 

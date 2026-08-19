@@ -17,7 +17,7 @@ final readonly class Span
         public string $name,
         public SpanType $type,
 
-        /** @var array<string, scalar|null> */
+        /** @var array<string, string|int|float|bool|null> */
         public array $attributes,
 
         public SpanStatus $status,
@@ -99,6 +99,28 @@ final readonly class Span
             startedAt: $startedAt,
             finishedAt: $finishedAt,
             error: null,
+        );
+    }
+
+    /**
+     * @param array<string, string|int|float|bool|null> $attributes
+     */
+    public function withAttributes(array $attributes): self
+    {
+        return new self(
+            id: $this->id,
+            traceId: $this->traceId,
+            parentId: $this->parentId,
+            name: $this->name,
+            type: $this->type,
+            attributes: [
+                ...$this->attributes,
+                ...$attributes,
+            ],
+            status: $this->status,
+            startedAt: $this->startedAt,
+            finishedAt: $this->finishedAt,
+            error: $this->error,
         );
     }
 }

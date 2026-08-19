@@ -10,7 +10,7 @@ use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 it('records database query metadata inside an active trace', function (): void {
     $tracer = app(Tracer::class);
 
-    $tracer->start('DatabaseTest');
+    $tracer->start('DatabaseTest', []);
 
     DB::select('select 1');
 
@@ -49,7 +49,7 @@ it('does not record database queries when database tracing is disabled', functio
 
     $tracer = app(Tracer::class);
 
-    $tracer->start('DatabaseTest');
+    $tracer->start('DatabaseTest', []);
 
     DB::select('select 1');
 
