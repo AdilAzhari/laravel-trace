@@ -10,22 +10,25 @@ use Throwable;
 
 final readonly class Span
 {
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public function __construct(
         public SpanId $id,
         public TraceId $traceId,
         public ?SpanId $parentId,
         public string $name,
         public SpanType $type,
-
-        /** @var array<string, string|int|float|bool|null> */
         public array $attributes,
-
         public SpanStatus $status,
         public DateTimeImmutable $startedAt,
         public ?DateTimeImmutable $finishedAt = null,
         public ?SpanError $error = null,
     ) {}
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public static function start(
         TraceId $traceId,
         string $name,
@@ -79,6 +82,9 @@ final readonly class Span
         );
     }
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public static function completed(
         TraceId $traceId,
         string $name,
@@ -103,7 +109,7 @@ final readonly class Span
     }
 
     /**
-     * @param array<string, string|int|float|bool|null> $attributes
+     * @param  array<string, string|int|float|bool|null>  $attributes
      */
     public function withAttributes(array $attributes): self
     {
@@ -122,5 +128,14 @@ final readonly class Span
             finishedAt: $this->finishedAt,
             error: $this->error,
         );
+    }
+
+    public function durationMs(): ?float
+    {
+        if ($this->finishedAt === null) {
+            return null;
+        }
+
+        return ($this->finishedAt->format('U.u') - $this->startedAt->format('U.u')) * 1000;
     }
 }
