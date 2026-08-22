@@ -24,6 +24,9 @@ final readonly class Tracer implements TracerContract
         private TraceRecorder $traceRecorder,
     ) {}
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public function start(string $name, array $attributes = []): Trace
     {
         $trace = Trace::start($name, $attributes);
@@ -37,6 +40,9 @@ final readonly class Tracer implements TracerContract
         return $trace;
     }
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public function span(
         string $name,
         SpanType $type,
