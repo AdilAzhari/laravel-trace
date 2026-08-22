@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelTrace\LaravelTrace;
 
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -41,7 +42,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             SpanRecorder::class,
-            fn ($app): SpanRecorder => $app->make(
+            fn (Application $app): SpanRecorder => $app->make(
                 InMemorySpanRecorder::class,
             ),
         );
@@ -50,14 +51,14 @@ class LaravelTraceServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             TraceRecorder::class,
-            fn ($app): TraceRecorder => $app->make(
+            fn (Application $app): TraceRecorder => $app->make(
                 InMemoryTraceRecorder::class,
             ),
         );
 
         $this->app->singleton(
             DatabaseQueryListener::class,
-            function ($app): DatabaseQueryListener {
+            function (Application $app): DatabaseQueryListener {
                 return new DatabaseQueryListener(
                     tracer: $app->make(TracerContract::class),
                     enabled: (bool) $app->make('config')->get(
@@ -70,7 +71,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             TracerContract::class,
-            function ($app): Tracer {
+            function (Application $app): Tracer {
                 return new Tracer(
                     contextStore: $app->make(TraceContextStore::class),
                     spanRecorder: $app->make(SpanRecorder::class),
