@@ -20,6 +20,9 @@ final readonly class Trace
         public array $attributes = [],
     ) {}
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public static function start(string $name, array $attributes = []): self
     {
         return new self(
@@ -31,6 +34,9 @@ final readonly class Trace
         );
     }
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public function complete(DateTimeImmutable $finishedAt, array $attributes = []): self
     {
         return new self(
@@ -44,6 +50,9 @@ final readonly class Trace
         );
     }
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public function fail(
         Throwable $exception,
         DateTimeImmutable $finishedAt,
@@ -60,6 +69,9 @@ final readonly class Trace
         );
     }
 
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
     public function withAttributes(array $attributes): self
     {
         return new self(
