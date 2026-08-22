@@ -93,10 +93,10 @@ it('does not retain an error when completing a span', function (): void {
         ->toBeNull();
 });
 
-it('adds attributes to a span before closing', function () {
-    $contextStore = new InMemoryTraceContextStore();
-    $spanRecorder = new InMemorySpanRecorder();
-    $traceRecorder = new InMemoryTraceRecorder();
+it('adds attributes to a span before closing', function (): void {
+    $contextStore = new InMemoryTraceContextStore;
+    $spanRecorder = new InMemorySpanRecorder;
+    $traceRecorder = new InMemoryTraceRecorder;
 
     $tracer = new Tracer(
         contextStore: $contextStore,

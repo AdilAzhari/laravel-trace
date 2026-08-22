@@ -29,7 +29,7 @@ it('clears tracing context when the request fails', function (): void {
         ->toBeNull();
 });
 
-it('starts and completes a trace for an http request', function () {
+it('starts and completes a trace for an http request', function (): void {
     $tracer = app(Tracer::class);
 
     $response = $this->postJson('/trace-test');
@@ -64,7 +64,7 @@ it('starts and completes a trace for an http request', function () {
         ->toBeNull();
 });
 
-it('fails the trace when the request fails', function () {
+it('fails the trace when the request fails', function (): void {
     $tracer = app(Tracer::class);
 
     $this->withoutExceptionHandling();
