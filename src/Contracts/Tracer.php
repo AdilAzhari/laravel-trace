@@ -12,9 +12,18 @@ use Throwable;
 
 interface Tracer
 {
-    public function start(string $name, array $attributes): Trace;
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
+    public function start(
+        string $name,
+        array $attributes = [],
+    ): Trace;
 
-    public function Span(
+    /**
+     * @param  array<string, string|int|float|bool|null>  $attributes
+     */
+    public function span(
         string $name,
         SpanType $type,
         array $attributes = [],
