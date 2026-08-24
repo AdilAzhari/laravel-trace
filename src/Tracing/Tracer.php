@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelTrace\LaravelTrace\Tracing;
 
 use DateTimeImmutable;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use LaravelTrace\LaravelTrace\Context\TraceContext;
 use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
 use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
@@ -22,6 +23,7 @@ final readonly class Tracer implements TracerContract
         private TraceContextStore $contextStore,
         private SpanRecorder $spanRecorder,
         private TraceRecorder $traceRecorder,
+        private ?ConfigRepository $config = null,
     ) {}
 
     /**
@@ -31,13 +33,27 @@ final readonly class Tracer implements TracerContract
     {
         $trace = Trace::start($name, $attributes);
 
-        $this->setContext(
-            new TraceContext(
-                traceId: $trace->id,
-            ),
-        );
+        if ($this->isEnabled()) {
+            $this->setContext(
+                new TraceContext(
+                    traceId: $trace->id,
+                ),
+            );
+        }
 
         return $trace;
+    }
+
+    /**
+     * Read live rather than capturing a boolean at construction time: this
+     * class is resolved early via the container's 'events' -> event
+     * dispatcher -> listener tracer dependency chain, before test/runtime
+     * config overrides to 'laravel-trace.enabled' would have taken effect.
+     */
+    private function isEnabled(): bool
+    {
+        return $this->config === null
+            || (bool) $this->config->get('laravel-trace.enabled', true);
     }
 
     /**
