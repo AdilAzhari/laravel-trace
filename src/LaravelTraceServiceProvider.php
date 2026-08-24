@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace LaravelTrace\LaravelTrace;
 
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
+use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -15,9 +18,11 @@ use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
 use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
 use LaravelTrace\LaravelTrace\Contracts\TraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\DatabaseQueryListener;
+use LaravelTrace\LaravelTrace\Tracing\EventListenerTracer;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
+use LaravelTrace\LaravelTrace\Tracing\TracingEventDispatcher;
 
 class LaravelTraceServiceProvider extends ServiceProvider
 {
@@ -57,6 +62,36 @@ class LaravelTraceServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(
+            TracerContract::class,
+            function (Application $app): Tracer {
+                return new Tracer(
+                    contextStore: $app->make(TraceContextStore::class),
+                    spanRecorder: $app->make(SpanRecorder::class),
+                    traceRecorder: $app->make(TraceRecorder::class),
+                    config: $app->make(ConfigRepository::class),
+                );
+            },
+        );
+
+        $this->app->singleton(
+            'events',
+            function (Application $app): TracingEventDispatcher {
+                return (new TracingEventDispatcher(
+                    listenerTracer: $app->make(EventListenerTracer::class),
+                    container: $app,
+                ))
+                    ->setQueueResolver(
+                        fn (): Queue => $app->make(QueueFactoryContract::class)->connection(),
+                    )
+                    ->setTransactionManagerResolver(
+                        fn (): mixed => $app->bound('db.transactions')
+                            ? $app->make('db.transactions')
+                            : null,
+                    );
+            },
+        );
+
+        $this->app->singleton(
             DatabaseQueryListener::class,
             function (Application $app): DatabaseQueryListener {
                 return new DatabaseQueryListener(
@@ -65,17 +100,6 @@ class LaravelTraceServiceProvider extends ServiceProvider
                         'laravel-trace.database.enabled',
                         true,
                     ),
-                );
-            },
-        );
-
-        $this->app->singleton(
-            TracerContract::class,
-            function (Application $app): Tracer {
-                return new Tracer(
-                    contextStore: $app->make(TraceContextStore::class),
-                    spanRecorder: $app->make(SpanRecorder::class),
-                    traceRecorder: $app->make(TraceRecorder::class),
                 );
             },
         );

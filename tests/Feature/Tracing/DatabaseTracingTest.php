@@ -16,10 +16,10 @@ it('records database query metadata inside an active trace', function (): void {
 
     $spans = app(InMemorySpanRecorder::class)->all();
 
-    expect($spans)
-        ->toHaveCount(1);
+    $span = collect($spans)->firstWhere('type', SpanType::Database);
 
-    $span = $spans[0];
+    expect($span)
+        ->not->toBeNull();
 
     expect($span->attributes)
         ->toMatchArray([
@@ -53,6 +53,23 @@ it('does not record database queries when database tracing is disabled', functio
 
     DB::select('select 1');
 
-    expect(app(InMemorySpanRecorder::class)->all())
-        ->toBeEmpty();
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    expect(collect($spans)->firstWhere('type', SpanType::Database))
+        ->toBeNull();
+});
+
+it('does not trace database queries when tracing is globally disabled', function (): void {
+    config()->set('laravel-trace.enabled', false);
+
+    $tracer = app(Tracer::class);
+
+    $tracer->start('DatabaseTest', []);
+
+    DB::select('select 1');
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    expect(collect($spans)->firstWhere('type', SpanType::Database))
+        ->toBeNull();
 });

@@ -32,29 +32,27 @@ final readonly class TraceRequest
             ],
         );
 
-        $span = $this->tracer->span(
-            name: 'http.request',
-            type: SpanType::Http,
-            attributes: [
-                'http.method' => $request->method(),
-                'http.path' => $request->path(),
-            ],
-        );
+        $scope = $this->tracer->context() !== null
+            ? $this->tracer->span(
+                name: 'http.request',
+                type: SpanType::Http,
+            )
+            : null;
 
         try {
             $response = $next($request);
 
-            $span->attributes([
+            $scope?->attributes([
                 'http.status_code' => $response->getStatusCode(),
             ]);
 
-            $span->close();
+            $scope?->close();
 
             $this->tracer->completeTrace($trace);
 
             return $response;
         } catch (Throwable $exception) {
-            $span->fail($exception);
+            $scope?->fail($exception);
 
             $this->tracer->failTrace(
                 trace: $trace,
