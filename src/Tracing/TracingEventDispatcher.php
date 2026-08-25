@@ -21,8 +21,8 @@ final class TracingEventDispatcher extends Dispatcher
      * @param  Closure|string|array{class-string, string}  $listener
      */
     public function makeListener(
-        $listener,
-        $wildcard = false,
+        mixed $listener,
+        mixed $wildcard = false,
     ): Closure {
         $callable = parent::makeListener(
             $listener,
