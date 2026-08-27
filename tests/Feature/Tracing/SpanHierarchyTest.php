@@ -2,56 +2,87 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
+use LaravelTrace\LaravelTrace\Contracts\Tracer;
+use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 
-// it('maintains span parent relationships during an http request', function () {
-//    $response = $this->postJson('/trace-test/nested');
-//
-//    $response->assertSuccessful();
-//
-//    $spans = app(InMemorySpanRecorder::class)->all();
-//
-//    expect($spans)
-//        ->toHaveCount(3);
-//
-//    [$parent, $database, $inventory] = $spans;
-//
-//    expect($parent->parentId)
-//        ->toBeNull()
-//        ->and($database->parentId)
-//        ->toBe($parent->id)
-//        ->and($inventory->parentId)
-//        ->toBe($parent->id);
-// });
-//
-// it('maintains deeply nested span relationships', function () {
-//    $this->postJson('/trace-test/deep')
-//        ->assertSuccessful();
-//
-//    $spans = app(InMemorySpanRecorder::class)->all();
-//
-//    expect($spans)
-//        ->toHaveCount(3);
-//
-//    [$outer, $middle, $inner] = $spans;
-//
-//    expect($outer->parentId)
-//        ->toBeNull()
-//        ->and($middle->parentId)
-//        ->toBe($outer->id)
-//        ->and($inner->parentId)
-//        ->toBe($middle->id);
-// });
-// it('uses the same span recorder instance', function () {
-//    expect(app(SpanRecorder::class))
-//        ->toBe(app(InMemorySpanRecorder::class));
-// });
+it('maintains nested span parent relationships', function (): void {
+    $tracer = app(Tracer::class);
 
-// use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
-// use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+    $tracer->start('test');
 
-it('uses the same span recorder instance', function (): void {
-    expect(app(SpanRecorder::class))
-        ->toBe(app(InMemorySpanRecorder::class));
+    $outer = $tracer->span(
+        name: 'outer',
+        type: SpanType::Database,
+    );
+
+    $middle = $tracer->span(
+        name: 'middle',
+        type: SpanType::Database,
+    );
+
+    $inner = $tracer->span(
+        name: 'inner',
+        type: SpanType::Database,
+    );
+
+    expect($outer->span()->parentId)
+        ->toBeNull()
+        ->and($middle->span()->parentId)
+        ->toBe($outer->span()->id)
+        ->and($inner->span()->parentId)
+        ->toBe($middle->span()->id);
+
+    $inner->close();
+
+    expect($tracer->context()?->spanId)
+        ->toBe($middle->span()->id);
+
+    $middle->close();
+
+    expect($tracer->context()?->spanId)
+        ->toBe($outer->span()->id);
+
+    $outer->close();
+
+    expect($tracer->context()?->spanId)
+        ->toBeNull();
+});
+
+it('records nested spans with their correct parent relationships', function (): void {
+    $tracer = app(Tracer::class);
+
+    $tracer->start('test');
+
+    $outer = $tracer->span(
+        name: 'outer',
+        type: SpanType::Database,
+    );
+
+    $inner = $tracer->span(
+        name: 'inner',
+        type: SpanType::Database,
+    );
+
+    $inner->close();
+    $outer->close();
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    $outerSpan = collect($spans)
+        ->firstWhere('name', 'outer');
+
+    $innerSpan = collect($spans)
+        ->firstWhere('name', 'inner');
+
+    expect($spans)
+        ->toHaveCount(2)
+        ->and($outerSpan)
+        ->not->toBeNull()
+        ->and($innerSpan)
+        ->not->toBeNull()
+        ->and($outerSpan->parentId)
+        ->toBeNull()
+        ->and($innerSpan->parentId)
+        ->toBe($outerSpan->id);
 });
