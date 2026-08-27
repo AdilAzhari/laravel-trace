@@ -9,4 +9,8 @@ return [
         'enabled' => true,
     ],
 
+    'queue' => [
+        'enabled' => true,
+    ],
+
 ];

@@ -9,7 +9,11 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
 use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue as QueueFacade;
 use Illuminate\Support\ServiceProvider;
 use LaravelTrace\LaravelTrace\Console\Commands\LaravelTraceCommand;
 use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
@@ -21,6 +25,7 @@ use LaravelTrace\LaravelTrace\Tracing\DatabaseQueryListener;
 use LaravelTrace\LaravelTrace\Tracing\EventListenerTracer;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use LaravelTrace\LaravelTrace\Tracing\QueueJobListener;
 use LaravelTrace\LaravelTrace\Tracing\Tracer;
 use LaravelTrace\LaravelTrace\Tracing\TracingEventDispatcher;
 
@@ -73,6 +78,18 @@ class LaravelTraceServiceProvider extends ServiceProvider
             },
         );
 
+        $this->app->singleton(EventListenerTracer::class);
+
+        $this->app->singleton(
+            QueueJobListener::class,
+            function (Application $app): QueueJobListener {
+                return new QueueJobListener(
+                    tracer: $app->make(TracerContract::class),
+                    config: $app->make(ConfigRepository::class),
+                );
+            },
+        );
+
         $this->app->singleton(
             'events',
             function (Application $app): TracingEventDispatcher {
@@ -116,6 +133,22 @@ class LaravelTraceServiceProvider extends ServiceProvider
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'laravel-trace');
 
+        QueueFacade::createPayloadUsing(
+            function (): array {
+                $context = $this->app->make(
+                    TracerContract::class,
+                )->context();
+
+                if ($context === null) {
+                    return [];
+                }
+
+                return [
+                    'laravel-trace' => $context->toArray(),
+                ];
+            },
+        );
+
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -124,6 +157,22 @@ class LaravelTraceServiceProvider extends ServiceProvider
             QueryExecuted::class,
             DatabaseQueryListener::class,
         );
+
+        Event::listen(
+            JobProcessing::class,
+            [QueueJobListener::class, 'handleProcessing'],
+        );
+
+        Event::listen(
+            JobProcessed::class,
+            [QueueJobListener::class, 'handleProcessed'],
+        );
+
+        Event::listen(
+            JobExceptionOccurred::class,
+            [QueueJobListener::class, 'handleException'],
+        );
+
         $this->publishes([
             __DIR__.'/../config/laravel-trace.php' => config_path('laravel-trace.php'),
         ], ['laravel-trace', 'laravel-trace-config']);
