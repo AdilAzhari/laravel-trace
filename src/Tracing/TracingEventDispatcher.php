@@ -29,7 +29,11 @@ final class TracingEventDispatcher extends Dispatcher
             $wildcard,
         );
 
-        if ($wildcard || $this->isQueuedListener($listener)) {
+        if (
+            $wildcard
+            || $this->isQueuedListener($listener)
+            || $this->isInternalListener($listener)
+        ) {
             return $callable;
         }
 
@@ -49,17 +53,43 @@ final class TracingEventDispatcher extends Dispatcher
      */
     private function isQueuedListener(mixed $listener): bool
     {
-        $class = match (true) {
-            is_string($listener) => $this->parseClassCallable($listener)[0],
-            is_array($listener) => $listener[0],
-            default => null,
-        };
+        $class = $this->listenerClass($listener);
 
         if ($class === null) {
             return false;
         }
 
         return $this->handlerShouldBeQueued($class);
+    }
+
+    /**
+     * The package's own queue/database instrumentation listeners manage the
+     * trace context themselves. Wrapping them in a listener span would make
+     * the wrapper re-apply the context snapshot it captured before the
+     * listener ran, undoing the context the listener deliberately cleared
+     * and leaking queue execution context after every job.
+     *
+     * @param  Closure|string|array{class-string, string}  $listener
+     */
+    private function isInternalListener(mixed $listener): bool
+    {
+        $class = $this->listenerClass($listener);
+
+        return $class !== null
+            && str_starts_with($class, __NAMESPACE__.'\\');
+    }
+
+    /**
+     * @param  Closure|string|array{class-string, string}  $listener
+     * @return class-string|null
+     */
+    private function listenerClass(mixed $listener): ?string
+    {
+        return match (true) {
+            is_string($listener) => $this->parseClassCallable($listener)[0],
+            is_array($listener) => $listener[0],
+            default => null,
+        };
     }
 
     private function listenerName(mixed $listener): string
