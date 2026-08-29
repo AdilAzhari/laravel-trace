@@ -6,9 +6,11 @@ use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use LaravelTrace\LaravelTrace\Contracts\Tracer;
+use LaravelTrace\LaravelTrace\Span\Span;
 use LaravelTrace\LaravelTrace\Span\SpanStatus;
 use LaravelTrace\LaravelTrace\Span\SpanType;
 use LaravelTrace\LaravelTrace\Tests\Fixtures\Events\OrderCreated;
+use LaravelTrace\LaravelTrace\Tests\Fixtures\Events\OrderShipped;
 use LaravelTrace\LaravelTrace\Tests\Fixtures\Listeners\QueuedOrderNotifier;
 use LaravelTrace\LaravelTrace\Tests\Fixtures\Listeners\SendOrderConfirmation;
 use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
@@ -126,4 +128,139 @@ it('does not wrap queued listeners in a listener span', function (): void {
 
     expect(app(InMemorySpanRecorder::class)->all())
         ->toBeEmpty();
+});
+
+it('nests listener spans and restores each parent context as listeners finish', function (): void {
+    $tracer = app(Tracer::class);
+
+    $contextInsideOuter = null;
+    $contextInsideInner = null;
+    $contextInOuterAfterInner = null;
+
+    Event::listen(
+        OrderShipped::class,
+        function () use ($tracer, &$contextInsideInner): void {
+            $contextInsideInner = $tracer->context();
+        },
+    );
+
+    Event::listen(
+        OrderCreated::class,
+        function () use ($tracer, &$contextInsideOuter, &$contextInOuterAfterInner): void {
+            $contextInsideOuter = $tracer->context();
+
+            Event::dispatch(new OrderShipped(orderId: 1));
+
+            $contextInOuterAfterInner = $tracer->context();
+        },
+    );
+
+    $trace = $tracer->start('test');
+
+    Event::dispatch(new OrderCreated(orderId: 1));
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    $outerSpan = collect($spans)
+        ->first(fn (Span $span): bool => $span->parentId === null);
+
+    $innerSpan = collect($spans)
+        ->first(fn (Span $span): bool => $span->parentId !== null);
+
+    // Trace -> outer listener span -> inner listener span
+    expect($spans)
+        ->toHaveCount(2)
+        ->and($outerSpan->type)
+        ->toBe(SpanType::Listener)
+        ->and($innerSpan->type)
+        ->toBe(SpanType::Listener)
+        ->and($outerSpan->traceId->value)
+        ->toBe($trace->id->value)
+        ->and($innerSpan->traceId->value)
+        ->toBe($trace->id->value)
+        ->and($innerSpan->parentId->value)
+        ->toBe($outerSpan->id->value)
+        ->and($outerSpan->status)
+        ->toBe(SpanStatus::Completed)
+        ->and($innerSpan->status)
+        ->toBe(SpanStatus::Completed);
+
+    // The live context each listener saw while running.
+    expect($contextInsideOuter?->spanId?->value)
+        ->toBe($outerSpan->id->value)
+        ->and($contextInsideInner?->spanId?->value)
+        ->toBe($innerSpan->id->value);
+
+    // When the inner listener finished, the outer listener's context was restored.
+    expect($contextInOuterAfterInner?->spanId?->value)
+        ->toBe($outerSpan->id->value);
+
+    // When the outer listener finished, the original trace context was restored.
+    expect($tracer->context()?->traceId->value)
+        ->toBe($trace->id->value)
+        ->and($tracer->context()?->spanId)
+        ->toBeNull();
+});
+
+it('fails the inner listener span, propagates, and restores the outer listener context', function (): void {
+    $tracer = app(Tracer::class);
+
+    $contextInOuterWhenInnerThrew = null;
+
+    Event::listen(
+        OrderShipped::class,
+        function (): void {
+            throw new RuntimeException('Inner listener failed.');
+        },
+    );
+
+    Event::listen(
+        OrderCreated::class,
+        function () use ($tracer, &$contextInOuterWhenInnerThrew): void {
+            try {
+                Event::dispatch(new OrderShipped(orderId: 1));
+            } catch (RuntimeException $exception) {
+                $contextInOuterWhenInnerThrew = $tracer->context();
+
+                throw $exception;
+            }
+        },
+    );
+
+    $trace = $tracer->start('test');
+
+    expect(fn () => Event::dispatch(new OrderCreated(orderId: 1)))
+        ->toThrow(RuntimeException::class, 'Inner listener failed.');
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    $outerSpan = collect($spans)
+        ->first(fn (Span $span): bool => $span->parentId === null);
+
+    $innerSpan = collect($spans)
+        ->first(fn (Span $span): bool => $span->parentId !== null);
+
+    expect($spans)
+        ->toHaveCount(2)
+        ->and($innerSpan->parentId->value)
+        ->toBe($outerSpan->id->value)
+        ->and($innerSpan->status)
+        ->toBe(SpanStatus::Failed)
+        ->and($innerSpan->error?->type)
+        ->toBe(RuntimeException::class)
+        ->and($outerSpan->status)
+        ->toBe(SpanStatus::Failed)
+        ->and($outerSpan->error?->type)
+        ->toBe(RuntimeException::class);
+
+    // The inner span's failure restored the outer listener's context before the
+    // exception unwound any further.
+    expect($contextInOuterWhenInnerThrew?->spanId?->value)
+        ->toBe($outerSpan->id->value);
+
+    // The outer span's failure restored the original trace context: nothing leaked.
+    expect($tracer->context()?->traceId->value)
+        ->toBe($trace->id->value)
+        ->and($tracer->context()?->spanId)
+        ->toBeNull();
 });
