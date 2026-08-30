@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Config;
+namespace AdilAzhari\LaravelTrace\Config;
 
 final readonly class TraceConfig
 {

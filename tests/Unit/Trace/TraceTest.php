@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Trace\Trace;
-use LaravelTrace\LaravelTrace\Trace\TraceId;
-use LaravelTrace\LaravelTrace\Trace\TraceStatus;
+use AdilAzhari\LaravelTrace\Trace\Trace;
+use AdilAzhari\LaravelTrace\Trace\TraceId;
+use AdilAzhari\LaravelTrace\Trace\TraceStatus;
 
 it('starts a trace', function (): void {
     $trace = Trace::start('CreateOrder');
@@ -111,7 +111,7 @@ it('can add attributes without mutating the original trace', function (): void {
         ]);
 });
 
-it('preserves attributes when completing a trace', function () {
+it('preserves attributes when completing a trace', function (): void {
     $startedAt = new DateTimeImmutable('2026-01-01 10:00:00');
     $finishedAt = new DateTimeImmutable('2026-01-01 10:00:01');
 
@@ -136,7 +136,7 @@ it('preserves attributes when completing a trace', function () {
         ]);
 });
 
-it('preserves attributes when failing a trace', function () {
+it('preserves attributes when failing a trace', function (): void {
     $startedAt = new DateTimeImmutable('2026-01-01 10:00:00');
     $finishedAt = new DateTimeImmutable('2026-01-01 10:00:01');
 

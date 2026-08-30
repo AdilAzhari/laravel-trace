@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tracing;
+namespace AdilAzhari\LaravelTrace\Tracing;
 
+use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Span\SpanType;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
-use LaravelTrace\LaravelTrace\Context\TraceContext;
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Span\SpanType;
 
 final class QueueJobListener
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+use AdilAzhari\LaravelTrace\Span\SpanType;
 use Illuminate\Support\Facades\Route;
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Http\Middleware\TraceRequest;
-use LaravelTrace\LaravelTrace\Span\SpanType;
 
 Route::post('/trace-test/nested', function () {
     $tracer = app(Tracer::class);

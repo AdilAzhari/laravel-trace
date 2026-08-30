@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
-use LaravelTrace\LaravelTrace\Context\TraceContext;
-use LaravelTrace\LaravelTrace\Span\SpanId;
-use LaravelTrace\LaravelTrace\Trace\TraceId;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
-use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
-use LaravelTrace\LaravelTrace\Tracing\Tracer;
+use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
+use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Span\SpanId;
+use AdilAzhari\LaravelTrace\Trace\TraceId;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Tracing\Tracer;
 
 it('creates a context with a trace', function (): void {
     $traceId = TraceId::generate();

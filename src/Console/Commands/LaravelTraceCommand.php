@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Console\Commands;
+namespace AdilAzhari\LaravelTrace\Console\Commands;
 
 use Illuminate\Console\Command;
 

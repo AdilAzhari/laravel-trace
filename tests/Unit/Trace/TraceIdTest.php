@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Trace\TraceId;
+use AdilAzhari\LaravelTrace\Trace\TraceId;
 
 it('generates a unique trace id', function (): void {
     $first = TraceId::generate();

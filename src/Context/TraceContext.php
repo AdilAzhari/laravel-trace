@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Context;
+namespace AdilAzhari\LaravelTrace\Context;
 
-use LaravelTrace\LaravelTrace\Span\SpanId;
-use LaravelTrace\LaravelTrace\Trace\TraceId;
+use AdilAzhari\LaravelTrace\Span\SpanId;
+use AdilAzhari\LaravelTrace\Trace\TraceId;
 
 final readonly class TraceContext
 {

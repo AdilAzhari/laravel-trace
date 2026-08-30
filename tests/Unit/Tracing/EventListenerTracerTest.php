@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
-use LaravelTrace\LaravelTrace\Span\SpanStatus;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Tracing\EventListenerTracer;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
-use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
-use LaravelTrace\LaravelTrace\Tracing\Tracer;
+use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
+use AdilAzhari\LaravelTrace\Span\SpanStatus;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Tracing\EventListenerTracer;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Tracing\Tracer;
 
 it('records a listener span', function (): void {
     $spanRecorder = new InMemorySpanRecorder;

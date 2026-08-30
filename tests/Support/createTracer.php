@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
-use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
-use LaravelTrace\LaravelTrace\Tracing\Tracer;
+use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Tracing\Tracer;
 
 function createTracer(
     ?InMemoryTraceContextStore $store = null,

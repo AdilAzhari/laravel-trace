@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Trace\TraceStatus;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
-use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Trace\TraceStatus;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 
 it('starts a trace for an http request', function (): void {
     $tracer = app(Tracer::class);

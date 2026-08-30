@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Span\SpanId;
+use AdilAzhari\LaravelTrace\Span\SpanId;
 
 it('generates a unique span id', function (): void {
     $first = SpanId::generate();

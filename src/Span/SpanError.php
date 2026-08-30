@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Span;
+namespace AdilAzhari\LaravelTrace\Span;
 
 use Throwable;
 

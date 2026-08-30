@@ -2,8 +2,21 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace;
+namespace AdilAzhari\LaravelTrace;
 
+use AdilAzhari\LaravelTrace\Console\Commands\LaravelTraceCommand;
+use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
+use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
+use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
+use AdilAzhari\LaravelTrace\Contracts\Tracer as TracerContract;
+use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
+use AdilAzhari\LaravelTrace\Tracing\DatabaseQueryListener;
+use AdilAzhari\LaravelTrace\Tracing\EventListenerTracer;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Tracing\QueueJobListener;
+use AdilAzhari\LaravelTrace\Tracing\Tracer;
+use AdilAzhari\LaravelTrace\Tracing\TracingEventDispatcher;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
@@ -15,19 +28,6 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue as QueueFacade;
 use Illuminate\Support\ServiceProvider;
-use LaravelTrace\LaravelTrace\Console\Commands\LaravelTraceCommand;
-use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
-use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
-use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
-use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
-use LaravelTrace\LaravelTrace\Contracts\TraceRecorder;
-use LaravelTrace\LaravelTrace\Tracing\DatabaseQueryListener;
-use LaravelTrace\LaravelTrace\Tracing\EventListenerTracer;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
-use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
-use LaravelTrace\LaravelTrace\Tracing\QueueJobListener;
-use LaravelTrace\LaravelTrace\Tracing\Tracer;
-use LaravelTrace\LaravelTrace\Tracing\TracingEventDispatcher;
 
 class LaravelTraceServiceProvider extends ServiceProvider
 {

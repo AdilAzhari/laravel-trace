@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Contracts;
+namespace AdilAzhari\LaravelTrace\Contracts;
 
-use LaravelTrace\LaravelTrace\Trace\Trace;
+use AdilAzhari\LaravelTrace\Trace\Trace;
 
 interface TraceRecorder
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 
 it('maintains nested span parent relationships', function (): void {
     $tracer = app(Tracer::class);

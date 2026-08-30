@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tests\Fixtures\Jobs;
+namespace AdilAzhari\LaravelTrace\Tests\Fixtures\Jobs;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use RuntimeException;

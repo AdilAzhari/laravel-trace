@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tests\Fixtures\Listeners;
+namespace AdilAzhari\LaravelTrace\Tests\Fixtures\Listeners;
 
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Events\OrderCreated;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use LaravelTrace\LaravelTrace\Tests\Fixtures\Events\OrderCreated;
 
 final class QueuedOrderNotifier implements ShouldQueue
 {

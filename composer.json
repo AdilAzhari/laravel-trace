@@ -34,18 +34,18 @@
         "phpstan/extension-installer": "^1.4",
         "rector/rector": "^2.6"
     },
-    "autoload": {
-        "psr-4": {
-            "LaravelTrace\\LaravelTrace\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "LaravelTrace\\LaravelTrace\\Tests\\": "tests/",
-            "Workbench\\App\\": "workbench/app/",
-            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
-            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
-        }
+  "autoload": {
+    "psr-4": {
+      "AdilAzhari\\LaravelTrace\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "AdilAzhari\\LaravelTrace\\Tests\\": "tests/",
+      "Workbench\\App\\": "workbench/app/",
+      "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+      "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+    }
     },
     "scripts": {
         "post-autoload-dump": [
@@ -82,7 +82,7 @@
             "@analyse",
             "@lint:check",
             "@test:types",
-            "@test:unit"
+            "vendor/bin/pest"
         ],
         "clear": [
             "@php vendor/bin/testbench package:purge-skeleton --ansi"
@@ -91,10 +91,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "LaravelTrace\\LaravelTrace\\LaravelTraceServiceProvider"
+              "AdilAzhari\\LaravelTrace\\LaravelTraceServiceProvider"
             ],
             "aliases": {
-                "LaravelTrace": "LaravelTrace\\LaravelTrace\\Facades\\LaravelTrace"
+              "LaravelTrace": "AdilAzhari\\LaravelTrace\\Facades\\LaravelTrace"
             }
         }
     },
