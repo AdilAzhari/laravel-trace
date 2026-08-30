@@ -149,10 +149,10 @@ class LaravelTraceServiceProvider extends ServiceProvider
             },
         );
 
-        if (! $this->app->runningInConsole()) {
-            return;
-        }
-
+        // Instrumentation listeners must be registered in every environment,
+        // not just the console. Database queries and sync-queue jobs run
+        // during HTTP requests, and gating these behind runningInConsole()
+        // silently disables database and queue tracing on the request path.
         Event::listen(
             QueryExecuted::class,
             DatabaseQueryListener::class,
@@ -172,6 +172,10 @@ class LaravelTraceServiceProvider extends ServiceProvider
             JobExceptionOccurred::class,
             [QueueJobListener::class, 'handleException'],
         );
+
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
 
         $this->publishes([
             __DIR__.'/../config/laravel-trace.php' => config_path('laravel-trace.php'),

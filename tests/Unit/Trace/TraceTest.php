@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use LaravelTrace\LaravelTrace\Trace\Trace;
+use LaravelTrace\LaravelTrace\Trace\TraceId;
 use LaravelTrace\LaravelTrace\Trace\TraceStatus;
 
 it('starts a trace', function (): void {
@@ -65,7 +66,7 @@ it('fails a trace', function (): void {
         ->toBe($finishedAt)
         ->and($failed->error)
         ->not->toBeNull()
-        ->and($failed->error?->class)
+        ->and($failed->error?->type)
         ->toBe(RuntimeException::class)
         ->and($failed->error?->message)
         ->toBe('Something failed.');
@@ -107,5 +108,59 @@ it('can add attributes without mutating the original trace', function (): void {
         ->toBe([
             'http.method' => 'GET',
             'http.status_code' => 200,
+        ]);
+});
+
+it('preserves attributes when completing a trace', function () {
+    $startedAt = new DateTimeImmutable('2026-01-01 10:00:00');
+    $finishedAt = new DateTimeImmutable('2026-01-01 10:00:01');
+
+    $trace = new Trace(
+        id: TraceId::generate(),
+        name: 'http.request',
+        status: TraceStatus::Running,
+        startedAt: $startedAt,
+        attributes: [
+            'http.method' => 'POST',
+        ],
+    );
+
+    $completed = $trace->complete($finishedAt, [
+        'http.status_code' => 201,
+    ]);
+
+    expect($completed->attributes)
+        ->toBe([
+            'http.method' => 'POST',
+            'http.status_code' => 201,
+        ]);
+});
+
+it('preserves attributes when failing a trace', function () {
+    $startedAt = new DateTimeImmutable('2026-01-01 10:00:00');
+    $finishedAt = new DateTimeImmutable('2026-01-01 10:00:01');
+
+    $trace = new Trace(
+        id: TraceId::generate(),
+        name: 'http.request',
+        status: TraceStatus::Running,
+        startedAt: $startedAt,
+        attributes: [
+            'http.method' => 'POST',
+        ],
+    );
+
+    $failed = $trace->fail(
+        new RuntimeException('Something failed.'),
+        $finishedAt,
+        [
+            'http.status_code' => 500,
+        ],
+    );
+
+    expect($failed->attributes)
+        ->toBe([
+            'http.method' => 'POST',
+            'http.status_code' => 500,
         ]);
 });
