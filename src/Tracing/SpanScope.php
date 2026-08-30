@@ -81,6 +81,10 @@ final class SpanScope
      */
     public function addAttributes(array $attributes): self
     {
+        if ($this->closed) {
+            return $this;
+        }
+
         $this->span = $this->span->withAttributes($attributes);
 
         return $this;
