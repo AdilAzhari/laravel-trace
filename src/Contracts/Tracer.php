@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Contracts;
+namespace AdilAzhari\LaravelTrace\Contracts;
 
-use LaravelTrace\LaravelTrace\Context\TraceContext;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Trace\Trace;
-use LaravelTrace\LaravelTrace\Tracing\SpanScope;
+use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Trace\Trace;
+use AdilAzhari\LaravelTrace\Tracing\SpanScope;
 use Throwable;
 
 interface Tracer

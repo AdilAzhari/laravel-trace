@@ -2,10 +2,49 @@
 
 declare(strict_types=1);
 
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use Illuminate\Support\Facades\DB;
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use Illuminate\Support\Facades\Route;
+
+it('records database queries during an http request', function (): void {
+    Route::middleware(TraceRequest::class)
+        ->get('/trace-database-test', function () {
+            DB::select('select 1');
+
+            return response()->json(['ok' => true]);
+        });
+
+    $response = $this->get('/trace-database-test');
+
+    $response->assertSuccessful();
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    $databaseSpan = collect($spans)
+        ->firstWhere('type', SpanType::Database);
+
+    expect($databaseSpan)
+        ->not->toBeNull()
+        ->and($databaseSpan->name)
+        ->toBe('database.query')
+        ->and($databaseSpan->attributes)
+        ->toMatchArray([
+            'db.connection' => 'testing',
+            'db.sql' => 'select 1',
+        ]);
+
+    $trace = collect(app(InMemoryTraceRecorder::class)->all())
+        ->last();
+
+    expect($trace)
+        ->not->toBeNull()
+        ->and($databaseSpan->traceId->value)
+        ->toBe($trace->id->value);
+});
 
 it('records database query metadata inside an active trace', function (): void {
     $tracer = app(Tracer::class);
@@ -19,9 +58,8 @@ it('records database query metadata inside an active trace', function (): void {
     $span = collect($spans)->firstWhere('type', SpanType::Database);
 
     expect($span)
-        ->not->toBeNull();
-
-    expect($span->attributes)
+        ->not->toBeNull()
+        ->and($span->attributes)
         ->toMatchArray([
             'db.connection' => 'testing',
             'db.sql' => 'select 1',

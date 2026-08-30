@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Span\Span;
-use LaravelTrace\LaravelTrace\Span\SpanStatus;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Trace\TraceId;
+use AdilAzhari\LaravelTrace\Span\Span;
+use AdilAzhari\LaravelTrace\Span\SpanStatus;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Trace\TraceId;
 
 it('starts a span', function (): void {
     $traceId = TraceId::generate();

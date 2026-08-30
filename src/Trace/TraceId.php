@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Trace;
+namespace AdilAzhari\LaravelTrace\Trace;
 
 use Illuminate\Support\Str;
 use Stringable;

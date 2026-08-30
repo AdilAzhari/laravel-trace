@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Context\InMemoryTraceContextStore;
-use LaravelTrace\LaravelTrace\Context\TraceContext;
-use LaravelTrace\LaravelTrace\Trace\TraceId;
+use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
+use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Trace\TraceId;
 
 it('returns null when no context exists', function (): void {
     $store = new InMemoryTraceContextStore;

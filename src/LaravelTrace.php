@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace;
+namespace AdilAzhari\LaravelTrace;
 
 class LaravelTrace
 {

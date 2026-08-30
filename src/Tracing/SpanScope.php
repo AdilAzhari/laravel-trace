@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tracing;
+namespace AdilAzhari\LaravelTrace\Tracing;
 
-use LaravelTrace\LaravelTrace\Context\TraceContext;
-use LaravelTrace\LaravelTrace\Span\Span;
+use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Span\Span;
 use Throwable;
 
 final class SpanScope

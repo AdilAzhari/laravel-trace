@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Trace;
+namespace AdilAzhari\LaravelTrace\Trace;
 
 use DateTimeImmutable;
 use Throwable;
@@ -46,7 +46,10 @@ final readonly class Trace
             startedAt: $this->startedAt,
             finishedAt: $finishedAt,
             error: null,
-            attributes: $attributes,
+            attributes: [
+                ...$this->attributes,
+                ...$attributes,
+            ],
         );
     }
 
@@ -65,7 +68,10 @@ final readonly class Trace
             startedAt: $this->startedAt,
             finishedAt: $finishedAt,
             error: TraceError::fromThrowable($exception),
-            attributes: $attributes,
+            attributes: [
+                ...$this->attributes,
+                ...$attributes,
+            ],
         );
     }
 

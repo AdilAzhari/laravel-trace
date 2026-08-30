@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Trace\Trace;
-use LaravelTrace\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Trace\Trace;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 
 it('records a trace', function (): void {
     $recorder = new InMemoryTraceRecorder;

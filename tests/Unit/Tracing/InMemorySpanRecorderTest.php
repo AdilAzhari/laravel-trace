@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Span\Span;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Trace\TraceId;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Span\Span;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Trace\TraceId;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 
 it('records spans', function (): void {
     $recorder = new InMemorySpanRecorder;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tracing;
+namespace AdilAzhari\LaravelTrace\Tracing;
 
-use LaravelTrace\LaravelTrace\Contracts\TraceRecorder;
-use LaravelTrace\LaravelTrace\Trace\Trace;
+use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
+use AdilAzhari\LaravelTrace\Trace\Trace;
 
 final class InMemoryTraceRecorder implements TraceRecorder
 {

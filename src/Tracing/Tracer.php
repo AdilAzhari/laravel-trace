@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tracing;
+namespace AdilAzhari\LaravelTrace\Tracing;
 
+use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
+use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
+use AdilAzhari\LaravelTrace\Contracts\Tracer as TracerContract;
+use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
+use AdilAzhari\LaravelTrace\Span\Span;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Trace\Trace;
 use DateTimeImmutable;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
-use LaravelTrace\LaravelTrace\Context\TraceContext;
-use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
-use LaravelTrace\LaravelTrace\Contracts\TraceContextStore;
-use LaravelTrace\LaravelTrace\Contracts\Tracer as TracerContract;
-use LaravelTrace\LaravelTrace\Contracts\TraceRecorder;
-use LaravelTrace\LaravelTrace\Span\Span;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Trace\Trace;
 use LogicException;
 use Throwable;
 

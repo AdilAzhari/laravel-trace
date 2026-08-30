@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tracing;
+namespace AdilAzhari\LaravelTrace\Tracing;
 
 use Closure;
 use Illuminate\Contracts\Container\Container;

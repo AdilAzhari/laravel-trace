@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Span\Span;
+use AdilAzhari\LaravelTrace\Span\SpanStatus;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Events\OrderCreated;
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Events\OrderShipped;
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Listeners\QueuedOrderNotifier;
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Listeners\SendOrderConfirmation;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use Illuminate\Events\CallQueuedListener;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Span\Span;
-use LaravelTrace\LaravelTrace\Span\SpanStatus;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Tests\Fixtures\Events\OrderCreated;
-use LaravelTrace\LaravelTrace\Tests\Fixtures\Events\OrderShipped;
-use LaravelTrace\LaravelTrace\Tests\Fixtures\Listeners\QueuedOrderNotifier;
-use LaravelTrace\LaravelTrace\Tests\Fixtures\Listeners\SendOrderConfirmation;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 
 it('records a span when an event listener executes', function (): void {
     Event::listen(

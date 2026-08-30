@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
 
 it('resolves the tracer from the container', function (): void {
     expect(app(Tracer::class))
         ->toBeInstanceOf(
-            LaravelTrace\LaravelTrace\Tracing\Tracer::class,
+            AdilAzhari\LaravelTrace\Tracing\Tracer::class,
         );
 });

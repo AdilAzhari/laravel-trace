@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Span;
+namespace AdilAzhari\LaravelTrace\Span;
 
+use AdilAzhari\LaravelTrace\Trace\TraceId;
 use DateTimeImmutable;
-use LaravelTrace\LaravelTrace\Trace\TraceId;
 use Throwable;
 
 final readonly class Span

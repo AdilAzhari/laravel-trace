@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tracing;
+namespace AdilAzhari\LaravelTrace\Tracing;
 
-use LaravelTrace\LaravelTrace\Contracts\SpanRecorder;
-use LaravelTrace\LaravelTrace\Span\Span;
+use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
+use AdilAzhari\LaravelTrace\Span\Span;
 
 final class InMemorySpanRecorder implements SpanRecorder
 {

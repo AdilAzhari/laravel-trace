@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Http\Middleware;
+namespace AdilAzhari\LaravelTrace\Http\Middleware;
 
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Span\SpanType;
 use Closure;
 use Illuminate\Http\Request;
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Span\SpanType;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 

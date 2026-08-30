@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace LaravelTrace\LaravelTrace\Tests;
+namespace AdilAzhari\LaravelTrace\Tests;
 
-use LaravelTrace\LaravelTrace\LaravelTraceServiceProvider;
+use AdilAzhari\LaravelTrace\LaravelTraceServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra

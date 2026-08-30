@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+use AdilAzhari\LaravelTrace\Span\SpanStatus;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Jobs\FailingJob;
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Jobs\TracedJob;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use Illuminate\Contracts\Queue\Factory as QueueFactory;
 use Illuminate\Support\Facades\Queue;
-use LaravelTrace\LaravelTrace\Contracts\Tracer;
-use LaravelTrace\LaravelTrace\Span\SpanStatus;
-use LaravelTrace\LaravelTrace\Span\SpanType;
-use LaravelTrace\LaravelTrace\Tests\Fixtures\Jobs\FailingJob;
-use LaravelTrace\LaravelTrace\Tests\Fixtures\Jobs\TracedJob;
-use LaravelTrace\LaravelTrace\Tracing\InMemorySpanRecorder;
 
 it('records a span when a queued job is processed', function (): void {
     $tracer = app(Tracer::class);
@@ -173,4 +175,35 @@ it('does not leak queue trace context after a job fails', function (): void {
         ->toThrow(RuntimeException::class, 'Job failed.')
         ->and($tracer->context())
         ->toBeNull();
+});
+
+it('traces a synchronous job dispatched during an http request', function (): void {
+    Route::middleware(TraceRequest::class)
+        ->get('/trace-sync-job-test', function () {
+            app(QueueFactory::class)
+                ->connection('sync')
+                ->push(new TracedJob);
+
+            return response()->json(['ok' => true]);
+        });
+
+    $response = $this->get('/trace-sync-job-test');
+
+    $response->assertSuccessful();
+
+    $queueSpan = collect(app(InMemorySpanRecorder::class)->all())
+        ->firstWhere('name', 'queue.job');
+
+    $httpTrace = collect(
+        app(InMemoryTraceRecorder::class)->all(),
+    )->last();
+
+    expect($queueSpan)
+        ->not->toBeNull()
+        ->and($queueSpan->type)
+        ->toBe(SpanType::Job)
+        ->and($queueSpan->status)
+        ->toBe(SpanStatus::Completed)
+        ->and($queueSpan->traceId->value)
+        ->toBe($httpTrace->id->value);
 });
