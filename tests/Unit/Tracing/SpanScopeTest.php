@@ -9,6 +9,7 @@ use AdilAzhari\LaravelTrace\Span\SpanType;
 use AdilAzhari\LaravelTrace\Trace\TraceId;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Tracing\SpanScope;
 use AdilAzhari\LaravelTrace\Tracing\Tracer;
 
 it('restores the previous context when closed', function (): void {
@@ -127,4 +128,29 @@ it('adds attributes to a span before closing', function (): void {
             'http.method' => 'GET',
             'http.status_code' => 200,
         ]);
+});
+
+it('depends on the span completer contract', function (): void {
+    $contextStore = new InMemoryTraceContextStore;
+    $spanRecorder = new InMemorySpanRecorder;
+    $traceRecorder = new InMemoryTraceRecorder;
+
+    $tracer = new Tracer(
+        contextStore: $contextStore,
+        spanRecorder: $spanRecorder,
+        traceRecorder: $traceRecorder,
+    );
+
+    $tracer->start('test');
+
+    $scope = $tracer->span(
+        name: 'test.span',
+        type: SpanType::Action,
+    );
+
+    expect($scope)->toBeInstanceOf(SpanScope::class);
+
+    $scope->close();
+
+    expect($spanRecorder->all())->toHaveCount(1);
 });
