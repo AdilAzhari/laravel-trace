@@ -66,3 +66,60 @@ it('sets the trace context when starting a trace', function (): void {
         ->and($tracer->context()?->spanId)
         ->toBeNull();
 });
+
+it('serializes a trace-only context to a header value', function (): void {
+    $traceId = TraceId::generate();
+
+    $context = new TraceContext(traceId: $traceId);
+
+    expect($context->toHeader())
+        ->toBe($traceId->value);
+});
+
+it('serializes a context with a span to a header value', function (): void {
+    $traceId = TraceId::generate();
+    $spanId = SpanId::generate();
+
+    $context = new TraceContext(traceId: $traceId, spanId: $spanId);
+
+    expect($context->toHeader())
+        ->toBe($traceId->value.'-'.$spanId->value);
+});
+
+it('round-trips a context through the header representation', function (): void {
+    $context = (new TraceContext(traceId: TraceId::generate()))
+        ->withSpan(SpanId::generate());
+
+    $restored = TraceContext::fromHeader($context->toHeader());
+
+    expect($restored)
+        ->not->toBeNull()
+        ->and($restored->traceId->value)
+        ->toBe($context->traceId->value)
+        ->and($restored->spanId?->value)
+        ->toBe($context->spanId?->value);
+});
+
+it('parses a trace-only header value', function (): void {
+    $traceId = TraceId::generate();
+
+    $restored = TraceContext::fromHeader(' '.$traceId->value.' ');
+
+    expect($restored)
+        ->not->toBeNull()
+        ->and($restored->traceId->value)
+        ->toBe($traceId->value)
+        ->and($restored->spanId)
+        ->toBeNull();
+});
+
+it('rejects malformed header values', function (string $header): void {
+    expect(TraceContext::fromHeader($header))->toBeNull();
+})->with([
+    'empty' => '',
+    'whitespace' => '   ',
+    'not an id' => 'not-a-valid-context',
+    'single garbage segment' => 'abc123',
+    'too many segments' => TraceId::generate()->value.'-'.SpanId::generate()->value.'-'.SpanId::generate()->value,
+    'invalid span segment' => TraceId::generate()->value.'-nope',
+]);

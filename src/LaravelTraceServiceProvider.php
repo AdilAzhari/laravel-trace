@@ -10,6 +10,7 @@ use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
 use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
 use AdilAzhari\LaravelTrace\Contracts\Tracer as TracerContract;
 use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
+use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
 use AdilAzhari\LaravelTrace\Tracing\DatabaseQueryListener;
 use AdilAzhari\LaravelTrace\Tracing\EventListenerTracer;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
@@ -22,12 +23,15 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
 use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue as QueueFacade;
 use Illuminate\Support\ServiceProvider;
+use Psr\Http\Message\RequestInterface;
 
 class LaravelTraceServiceProvider extends ServiceProvider
 {
@@ -113,10 +117,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
             function (Application $app): DatabaseQueryListener {
                 return new DatabaseQueryListener(
                     tracer: $app->make(TracerContract::class),
-                    enabled: (bool) $app->make('config')->get(
-                        'laravel-trace.database.enabled',
-                        true,
-                    ),
+                    config: $app->make(ConfigRepository::class),
                 );
             },
         );
@@ -148,6 +149,8 @@ class LaravelTraceServiceProvider extends ServiceProvider
                 ];
             },
         );
+
+        $this->propagateContextToOutboundRequests();
 
         // Instrumentation listeners must be registered in every environment,
         // not just the console. Database queries and sync-queue jobs run
@@ -200,5 +203,52 @@ class LaravelTraceServiceProvider extends ServiceProvider
         $this->commands([
             LaravelTraceCommand::class,
         ]);
+    }
+
+    /**
+     * Attach the active trace context to outbound HTTP client requests so a
+     * downstream service can continue the trace. Mirrors the queue payload
+     * propagation. Opt-in, and an explicit header is never overwritten.
+     */
+    private function propagateContextToOutboundRequests(): void
+    {
+        if (! class_exists(HttpFactory::class)) {
+            return;
+        }
+
+        Http::globalRequestMiddleware(
+            function (RequestInterface $request): RequestInterface {
+                $config = $this->app->make(ConfigRepository::class);
+
+                if (! (bool) $config->get('laravel-trace.enabled', true)) {
+                    return $request;
+                }
+
+                if (! (bool) $config->get('laravel-trace.http.propagate_outbound', false)) {
+                    return $request;
+                }
+
+                $header = $config->get(
+                    'laravel-trace.http.header',
+                    TraceRequest::DEFAULT_HEADER,
+                );
+
+                $header = is_string($header) && $header !== ''
+                    ? $header
+                    : TraceRequest::DEFAULT_HEADER;
+
+                if ($request->hasHeader($header)) {
+                    return $request;
+                }
+
+                $context = $this->app->make(TracerContract::class)->context();
+
+                if ($context === null) {
+                    return $request;
+                }
+
+                return $request->withHeader($header, $context->toHeader());
+            },
+        );
     }
 }

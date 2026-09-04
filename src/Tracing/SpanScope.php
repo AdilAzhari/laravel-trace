@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AdilAzhari\LaravelTrace\Tracing;
 
 use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Contracts\SpanCompleter;
+use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
 use AdilAzhari\LaravelTrace\Span\Span;
 use Throwable;
 
@@ -15,7 +17,8 @@ final class SpanScope
     public function __construct(
         private Span $span,
         private readonly TraceContext $previousContext,
-        private readonly Tracer $tracer,
+        private readonly SpanCompleter $spanCompleter,
+        private readonly TraceContextStore $contextStore,
     ) {}
 
     public function span(): Span
@@ -31,13 +34,9 @@ final class SpanScope
 
         $this->closed = true;
 
-        $completed = $this->tracer->completeSpan(
-            $this->span,
-        );
+        $completed = $this->spanCompleter->completeSpan($this->span);
 
-        $this->tracer->setContext(
-            $this->previousContext,
-        );
+        $this->contextStore->set($this->previousContext);
 
         return $completed;
     }
@@ -50,14 +49,12 @@ final class SpanScope
 
         $this->closed = true;
 
-        $failed = $this->tracer->failSpan(
+        $failed = $this->spanCompleter->failSpan(
             $this->span,
             $exception,
         );
 
-        $this->tracer->setContext(
-            $this->previousContext,
-        );
+        $this->contextStore->set($this->previousContext);
 
         return $failed;
     }

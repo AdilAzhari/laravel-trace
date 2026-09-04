@@ -6,18 +6,29 @@ namespace AdilAzhari\LaravelTrace\Tracing;
 
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Span\SpanType;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Database\Events\QueryExecuted;
 
 final readonly class DatabaseQueryListener
 {
     public function __construct(
         private Tracer $tracer,
-        private bool $enabled,
+        private ConfigRepository $config,
     ) {}
 
     public function handle(QueryExecuted $event): void
     {
-        if (! $this->enabled) {
+        if (! (bool) $this->config->get(
+            'laravel-trace.enabled',
+            true,
+        )) {
+            return;
+        }
+
+        if (! (bool) $this->config->get(
+            'laravel-trace.database.enabled',
+            true,
+        )) {
             return;
         }
 

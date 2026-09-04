@@ -10,15 +10,52 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('laravel_trace_placeholder', function (Blueprint $table) {
-            $table->id();
+        Schema::create('laravel_traces', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
             $table->string('name');
-            $table->timestamps();
+            $this->extracted($table);
+
+            $table->index(['status', 'started_at']);
+        });
+
+        Schema::create('laravel_trace_spans', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('trace_id', 26);
+            $table->char('parent_id', 26)->nullable();
+
+            $table->string('name');
+            $table->string('type');
+            $this->extracted($table);
+
+            $table->foreign('trace_id')
+                ->references('id')
+                ->on('laravel_traces')
+                ->cascadeOnDelete();
+
+            $table->index('trace_id');
+            $table->index('parent_id');
+            $table->index(['status', 'started_at']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('laravel_trace_placeholder');
+        Schema::dropIfExists('laravel_trace_spans');
+        Schema::dropIfExists('laravel_traces');
+    }
+
+    public function extracted(Blueprint $table): void
+    {
+        $table->string('status');
+
+        $table->dateTime('started_at');
+        $table->dateTime('finished_at')->nullable();
+
+        $table->string('error_type')->nullable();
+        $table->text('error_message')->nullable();
+        $table->text('error_file')->nullable();
+        $table->unsignedInteger('error_line')->nullable();
+
+        $table->json('attributes')->nullable();
     }
 };

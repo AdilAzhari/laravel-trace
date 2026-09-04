@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AdilAzhari\LaravelTrace\Tracing;
 
 use AdilAzhari\LaravelTrace\Context\TraceContext;
+use AdilAzhari\LaravelTrace\Contracts\SpanCompleter;
 use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
 use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
 use AdilAzhari\LaravelTrace\Contracts\Tracer as TracerContract;
@@ -17,7 +18,7 @@ use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use LogicException;
 use Throwable;
 
-final readonly class Tracer implements TracerContract
+final readonly class Tracer implements SpanCompleter, TracerContract
 {
     public function __construct(
         private TraceContextStore $contextStore,
@@ -53,7 +54,7 @@ final readonly class Tracer implements TracerContract
     private function isEnabled(): bool
     {
         return $this->config === null
-            || (bool) $this->config->get('laravel-trace.enabled', true);
+            || $this->config->get('laravel-trace.enabled', true);
     }
 
     /**
@@ -87,7 +88,8 @@ final readonly class Tracer implements TracerContract
         return new SpanScope(
             span: $span,
             previousContext: $previousContext,
-            tracer: $this,
+            spanCompleter: $this,
+            contextStore: $this->contextStore,
         );
     }
 
