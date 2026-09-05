@@ -40,6 +40,15 @@ final readonly class Tracer implements SpanCompleter, TracerContract
                     traceId: $trace->id,
                 ),
             );
+
+            // Recorded immediately, while still `Running`, so a storage
+            // driver that enforces a foreign key from spans to their trace
+            // (see the database recorder) has a parent row to reference
+            // before any span belonging to this trace is recorded.
+            // completeTrace()/failTrace() record the same trace ID again
+            // with its terminal status; recorders are required to be
+            // idempotent by ID, so this is an update, not a duplicate.
+            $this->traceRecorder->record($trace);
         }
 
         return $trace;
