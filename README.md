@@ -63,6 +63,29 @@ php artisan vendor:publish --tag="laravel-trace-assets"
 
 <!-- Add a basic usage example here. -->
 
+### Database storage
+
+By default, traces and spans are held in memory for the lifetime of the
+request. To persist them, publish and run the migrations (above), then set
+the storage driver to `database`:
+
+```php
+// config/laravel-trace.php
+'storage' => [
+    'driver' => 'database',
+
+    'database' => [
+        'connection' => null, // defaults to your app's default connection
+        'swallow_exceptions' => true,
+    ],
+],
+```
+
+A storage write failure is logged and swallowed by default, so a database
+outage or a missing table never breaks the host application - set
+`swallow_exceptions` to `false` while debugging your setup to let it throw
+instead.
+
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
