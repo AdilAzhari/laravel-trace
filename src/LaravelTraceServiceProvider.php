@@ -11,6 +11,10 @@ use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
 use AdilAzhari\LaravelTrace\Contracts\Tracer as TracerContract;
 use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
 use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+use AdilAzhari\LaravelTrace\Storage\DatabaseSpanRecorder;
+use AdilAzhari\LaravelTrace\Storage\DatabaseTraceRecorder;
+use AdilAzhari\LaravelTrace\Storage\StorageDrivenSpanRecorder;
+use AdilAzhari\LaravelTrace\Storage\StorageDrivenTraceRecorder;
 use AdilAzhari\LaravelTrace\Tracing\DatabaseQueryListener;
 use AdilAzhari\LaravelTrace\Tracing\EventListenerTracer;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
@@ -53,20 +57,24 @@ class LaravelTraceServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(InMemorySpanRecorder::class);
+        $this->app->singleton(DatabaseSpanRecorder::class);
+        $this->app->singleton(StorageDrivenSpanRecorder::class);
 
         $this->app->singleton(
             SpanRecorder::class,
             fn (Application $app): SpanRecorder => $app->make(
-                InMemorySpanRecorder::class,
+                StorageDrivenSpanRecorder::class,
             ),
         );
 
         $this->app->singleton(InMemoryTraceRecorder::class);
+        $this->app->singleton(DatabaseTraceRecorder::class);
+        $this->app->singleton(StorageDrivenTraceRecorder::class);
 
         $this->app->singleton(
             TraceRecorder::class,
             fn (Application $app): TraceRecorder => $app->make(
-                InMemoryTraceRecorder::class,
+                StorageDrivenTraceRecorder::class,
             ),
         );
 

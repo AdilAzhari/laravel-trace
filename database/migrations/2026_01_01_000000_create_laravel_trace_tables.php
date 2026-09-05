@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('laravel_traces', function (Blueprint $table): void {
-            $table->char('id', 26)->primary();
+            $table->string('id', 26)->primary();
             $table->string('name');
             $this->extracted($table);
 
@@ -19,9 +19,9 @@ return new class extends Migration
         });
 
         Schema::create('laravel_trace_spans', function (Blueprint $table): void {
-            $table->char('id', 26)->primary();
-            $table->char('trace_id', 26);
-            $table->char('parent_id', 26)->nullable();
+            $table->string('id', 26)->primary();
+            $table->string('trace_id', 26);
+            $table->string('parent_id', 26)->nullable();
 
             $table->string('name');
             $table->string('type');
@@ -32,7 +32,7 @@ return new class extends Migration
                 ->on('laravel_traces')
                 ->cascadeOnDelete();
 
-            $table->index('trace_id');
+            $table->index(['trace_id', 'started_at']);
             $table->index('parent_id');
             $table->index(['status', 'started_at']);
         });
@@ -48,8 +48,9 @@ return new class extends Migration
     {
         $table->string('status');
 
-        $table->dateTime('started_at');
-        $table->dateTime('finished_at')->nullable();
+        $table->dateTime('started_at', 6);
+        $table->dateTime('finished_at', 6)->nullable();
+        $table->double('duration_ms')->nullable();
 
         $table->string('error_type')->nullable();
         $table->text('error_message')->nullable();
