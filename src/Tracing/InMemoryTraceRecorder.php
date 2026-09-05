@@ -10,13 +10,18 @@ use AdilAzhari\LaravelTrace\Trace\Trace;
 final class InMemoryTraceRecorder implements TraceRecorder
 {
     /**
-     * @var list<Trace>
+     * @var array<string, Trace>
      */
     private array $traces = [];
 
+    /**
+     * Idempotent by trace ID: a later record for the same trace (e.g. its
+     * terminal state) replaces the earlier one rather than appending a
+     * second entry.
+     */
     public function record(Trace $trace): void
     {
-        $this->traces[] = $trace;
+        $this->traces[$trace->id->value] = $trace;
     }
 
     /**
@@ -24,6 +29,6 @@ final class InMemoryTraceRecorder implements TraceRecorder
      */
     public function all(): array
     {
-        return $this->traces;
+        return array_values($this->traces);
     }
 }

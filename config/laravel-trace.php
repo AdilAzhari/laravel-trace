@@ -7,6 +7,24 @@ return [
 
     'storage' => [
         'driver' => 'memory',
+
+        'database' => [
+
+            /*
+             * The database connection traces and spans are written to. Leave
+             * as null to use the application's default connection.
+             */
+            'connection' => null,
+
+            /*
+             * When a write to the database fails (bad connection, missing
+             * table, etc.), the exception is logged and swallowed so tracing
+             * never breaks the host application. Set to false while
+             * debugging your storage setup to let the exception surface.
+             */
+            'swallow_exceptions' => true,
+
+        ],
     ],
 
     'database' => [
