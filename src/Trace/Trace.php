@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Trace;
 
+use AdilAzhari\LaravelTrace\Span\Span;
 use DateTimeImmutable;
 use Throwable;
 
@@ -73,6 +74,19 @@ final readonly class Trace
                 ...$attributes,
             ],
         );
+    }
+
+    /**
+     * The wall-clock duration of the trace in milliseconds, or null while it
+     * is still running. Mirrors {@see Span::durationMs()}.
+     */
+    public function durationMs(): ?float
+    {
+        if ($this->finishedAt === null) {
+            return null;
+        }
+
+        return ($this->finishedAt->format('U.u') - $this->startedAt->format('U.u')) * 1000;
     }
 
     /**

@@ -72,6 +72,22 @@ it('fails a trace', function (): void {
         ->toBe('Something failed.');
 });
 
+it('computes its duration in milliseconds once finished', function (): void {
+    $trace = new Trace(
+        id: TraceId::generate(),
+        name: 'checkout',
+        status: TraceStatus::Completed,
+        startedAt: new DateTimeImmutable('2026-01-01 12:00:00.000000'),
+        finishedAt: new DateTimeImmutable('2026-01-01 12:00:00.250000'),
+    );
+
+    expect($trace->durationMs())->toBe(250.0);
+});
+
+it('has no duration while still running', function (): void {
+    expect(Trace::start('checkout')->durationMs())->toBeNull();
+});
+
 it('starts a trace with attributes', function (): void {
     $trace = Trace::start(
         name: 'http.request',

@@ -13,12 +13,16 @@ use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
 use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
 use AdilAzhari\LaravelTrace\Storage\DatabaseSpanRecorder;
 use AdilAzhari\LaravelTrace\Storage\DatabaseTraceRecorder;
+use AdilAzhari\LaravelTrace\Storage\SpanRecordMapper;
 use AdilAzhari\LaravelTrace\Storage\StorageDrivenSpanRecorder;
 use AdilAzhari\LaravelTrace\Storage\StorageDrivenTraceRecorder;
+use AdilAzhari\LaravelTrace\Storage\TraceRecordMapper;
 use AdilAzhari\LaravelTrace\Tracing\DatabaseQueryListener;
 use AdilAzhari\LaravelTrace\Tracing\EventListenerTracer;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemorySpanStore;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceStore;
 use AdilAzhari\LaravelTrace\Tracing\QueueJobListener;
 use AdilAzhari\LaravelTrace\Tracing\Tracer;
 use AdilAzhari\LaravelTrace\Tracing\TracingEventDispatcher;
@@ -55,6 +59,12 @@ class LaravelTraceServiceProvider extends ServiceProvider
             TraceContextStore::class,
             InMemoryTraceContextStore::class,
         );
+
+        $this->app->singleton(TraceRecordMapper::class);
+        $this->app->singleton(SpanRecordMapper::class);
+
+        $this->app->singleton(InMemoryTraceStore::class);
+        $this->app->singleton(InMemorySpanStore::class);
 
         $this->app->singleton(InMemorySpanRecorder::class);
         $this->app->singleton(DatabaseSpanRecorder::class);

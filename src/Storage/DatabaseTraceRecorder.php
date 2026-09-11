@@ -30,6 +30,7 @@ final class DatabaseTraceRecorder implements TraceRecorder
     public function __construct(
         private readonly ConfigRepository $config,
         private readonly LoggerInterface $logger,
+        private readonly TraceRecordMapper $mapper,
     ) {}
 
     public function record(Trace $trace): void
@@ -43,7 +44,7 @@ final class DatabaseTraceRecorder implements TraceRecorder
                 fn () => TraceRecord::on($this->connection())
                     ->updateOrCreate(
                         ['id' => $trace->id->value],
-                        $this->toAttributes($trace),
+                        $this->mapper->toAttributes($trace),
                     ),
             );
         } catch (Throwable $exception) {
@@ -61,34 +62,6 @@ final class DatabaseTraceRecorder implements TraceRecorder
                 ['exception' => $exception],
             );
         }
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function toAttributes(Trace $trace): array
-    {
-        return [
-            'name' => $trace->name,
-            'status' => $trace->status->value,
-            'started_at' => $trace->startedAt,
-            'finished_at' => $trace->finishedAt,
-            'duration_ms' => $this->durationMs($trace),
-            'error_type' => $trace->error?->type,
-            'error_message' => $trace->error?->message,
-            'error_file' => $trace->error?->file,
-            'error_line' => $trace->error?->line,
-            'attributes' => $trace->attributes,
-        ];
-    }
-
-    private function durationMs(Trace $trace): ?float
-    {
-        if ($trace->finishedAt === null) {
-            return null;
-        }
-
-        return ($trace->finishedAt->format('U.u') - $trace->startedAt->format('U.u')) * 1000;
     }
 
     private function connection(): ?string
