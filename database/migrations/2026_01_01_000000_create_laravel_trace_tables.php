@@ -17,6 +17,7 @@ return new class extends Migration
 
             $table->index(['status', 'started_at']);
             $table->index(['name', 'started_at']);
+            $table->index('started_at');
         });
 
         Schema::create('laravel_trace_spans', function (Blueprint $table): void {

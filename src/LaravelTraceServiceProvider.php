@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AdilAzhari\LaravelTrace;
 
 use AdilAzhari\LaravelTrace\Console\Commands\LaravelTraceCommand;
+use AdilAzhari\LaravelTrace\Console\Commands\PruneTracesCommand;
 use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
 use AdilAzhari\LaravelTrace\Contracts\SpanReader;
 use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
 use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
+use AdilAzhari\LaravelTrace\Contracts\TracePruner;
 use AdilAzhari\LaravelTrace\Contracts\Tracer as TracerContract;
 use AdilAzhari\LaravelTrace\Contracts\TraceReader;
 use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
@@ -19,6 +21,8 @@ use AdilAzhari\LaravelTrace\Read\InMemorySpanReader;
 use AdilAzhari\LaravelTrace\Read\InMemoryTraceReader;
 use AdilAzhari\LaravelTrace\Read\StorageDrivenSpanReader;
 use AdilAzhari\LaravelTrace\Read\StorageDrivenTraceReader;
+use AdilAzhari\LaravelTrace\Retention\DatabaseTracePruner;
+use AdilAzhari\LaravelTrace\Retention\InMemoryTracePruner;
 use AdilAzhari\LaravelTrace\Storage\DatabaseSpanRecorder;
 use AdilAzhari\LaravelTrace\Storage\DatabaseTraceRecorder;
 use AdilAzhari\LaravelTrace\Storage\SpanRecordMapper;
@@ -47,6 +51,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue as QueueFacade;
 use Illuminate\Support\ServiceProvider;
+use InvalidArgumentException;
 use Psr\Http\Message\RequestInterface;
 
 class LaravelTraceServiceProvider extends ServiceProvider
@@ -116,6 +121,34 @@ class LaravelTraceServiceProvider extends ServiceProvider
             fn (Application $app): TraceReader => $app->make(
                 StorageDrivenTraceReader::class,
             ),
+        );
+
+        $this->app->singleton(InMemoryTracePruner::class);
+        $this->app->singleton(DatabaseTracePruner::class);
+
+        // No StorageDriven*Pruner proxy: unlike the recorder/reader
+        // contracts, nothing resolves TracePruner during container boot, so
+        // there is no early-resolution problem to work around. A command
+        // (or any other caller) resolves it well after config is settled,
+        // so a plain factory that reads the driver at resolution time is
+        // enough - bound, not singleton, so it never goes stale.
+        $this->app->bind(
+            TracePruner::class,
+            function (Application $app): TracePruner {
+                $driver = $app->make(ConfigRepository::class)
+                    ->get('laravel-trace.storage.driver', 'memory');
+
+                return match ($driver) {
+                    'memory' => $app->make(InMemoryTracePruner::class),
+                    'database' => $app->make(DatabaseTracePruner::class),
+                    default => throw new InvalidArgumentException(
+                        sprintf(
+                            'Unknown laravel-trace storage driver [%s]. Expected "memory" or "database".',
+                            is_scalar($driver) ? (string) $driver : get_debug_type($driver),
+                        ),
+                    ),
+                };
+            },
         );
 
         $this->app->singleton(
@@ -250,6 +283,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
 
         $this->commands([
             LaravelTraceCommand::class,
+            PruneTracesCommand::class,
         ]);
     }
 
