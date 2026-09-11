@@ -6,11 +6,19 @@ namespace AdilAzhari\LaravelTrace;
 
 use AdilAzhari\LaravelTrace\Console\Commands\LaravelTraceCommand;
 use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
+use AdilAzhari\LaravelTrace\Contracts\SpanReader;
 use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
 use AdilAzhari\LaravelTrace\Contracts\TraceContextStore;
 use AdilAzhari\LaravelTrace\Contracts\Tracer as TracerContract;
+use AdilAzhari\LaravelTrace\Contracts\TraceReader;
 use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
 use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+use AdilAzhari\LaravelTrace\Read\DatabaseSpanReader;
+use AdilAzhari\LaravelTrace\Read\DatabaseTraceReader;
+use AdilAzhari\LaravelTrace\Read\InMemorySpanReader;
+use AdilAzhari\LaravelTrace\Read\InMemoryTraceReader;
+use AdilAzhari\LaravelTrace\Read\StorageDrivenSpanReader;
+use AdilAzhari\LaravelTrace\Read\StorageDrivenTraceReader;
 use AdilAzhari\LaravelTrace\Storage\DatabaseSpanRecorder;
 use AdilAzhari\LaravelTrace\Storage\DatabaseTraceRecorder;
 use AdilAzhari\LaravelTrace\Storage\SpanRecordMapper;
@@ -85,6 +93,28 @@ class LaravelTraceServiceProvider extends ServiceProvider
             TraceRecorder::class,
             fn (Application $app): TraceRecorder => $app->make(
                 StorageDrivenTraceRecorder::class,
+            ),
+        );
+
+        $this->app->singleton(InMemorySpanReader::class);
+        $this->app->singleton(DatabaseSpanReader::class);
+        $this->app->singleton(StorageDrivenSpanReader::class);
+
+        $this->app->singleton(
+            SpanReader::class,
+            fn (Application $app): SpanReader => $app->make(
+                StorageDrivenSpanReader::class,
+            ),
+        );
+
+        $this->app->singleton(InMemoryTraceReader::class);
+        $this->app->singleton(DatabaseTraceReader::class);
+        $this->app->singleton(StorageDrivenTraceReader::class);
+
+        $this->app->singleton(
+            TraceReader::class,
+            fn (Application $app): TraceReader => $app->make(
+                StorageDrivenTraceReader::class,
             ),
         );
 
