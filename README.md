@@ -86,6 +86,64 @@ outage or a missing table never breaks the host application - set
 `swallow_exceptions` to `false` while debugging your setup to let it throw
 instead.
 
+### Querying traces and spans
+
+Once traces are being persisted you can read them back. The read API returns
+plain `Trace` and `Span` objects (never Eloquent models) and works the same
+against the `memory` and `database` drivers.
+
+```php
+use AdilAzhari\LaravelTrace\Facades\LaravelTrace;
+use AdilAzhari\LaravelTrace\Trace\TraceStatus;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+
+// Look one up by id
+$trace = LaravelTrace::trace('01J9Z8...');      // ?Trace
+$span  = LaravelTrace::span('01J9ZA...');        // ?Span
+
+// Fluent query -> Illuminate collection of Trace objects
+$failed = LaravelTrace::traces()
+    ->whereName('http.request')
+    ->whereStatus(TraceStatus::Failed)
+    ->startedAfter(now()->subHour())
+    ->minDurationMs(500)
+    ->whereAttribute('http.method', 'POST')   // equality only
+    ->orderBy('duration_ms', 'desc')
+    ->get();
+
+// Offset pagination (LengthAwarePaginator)
+$page = LaravelTrace::traces()->onlyErrors()->paginate(perPage: 25);
+
+// A trace's spans, flat (oldest first) or as a parent/child tree
+$spans = LaravelTrace::spansForTrace($trace->id);
+$tree  = LaravelTrace::spanTree($trace->id);   // list<SpanNode>
+
+// Spans on their own
+$slowQueries = LaravelTrace::spans()
+    ->whereTrace($trace->id)
+    ->whereType(SpanType::Database)
+    ->minDurationMs(100)
+    ->get();
+```
+
+You can also type-hint the contracts directly
+(`AdilAzhari\LaravelTrace\Contracts\TraceReader` /
+`SpanReader`) with an immutable `TraceQuery` / `SpanQuery`.
+
+Notes and limits for this release:
+
+- Traces and spans can be filtered by id, name, status, started-at range,
+  duration range, error presence, and attribute **equality**. Attribute
+  filtering compiles to a cross-database JSON path lookup; `LIKE`,
+  containment, and nested attribute paths are not supported.
+- Sorting is limited to `started_at`, `finished_at`, `duration_ms`, `name`
+  (and `type` for spans), always with a deterministic `id` tiebreak. The
+  default order is newest first.
+- Pagination is offset-based only.
+- The `memory` driver only sees what the current process recorded; it does
+  not persist between requests.
+- There is no dashboard, HTTP API, retention/pruning, or exporter yet.
+
 ## Changelog
 
 Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
