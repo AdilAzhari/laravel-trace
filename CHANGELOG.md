@@ -24,6 +24,23 @@
 - `laravel_traces` gains a `[name, started_at]` index and
   `laravel_trace_spans` a `[type, started_at]` index to support the new
   filters.
+- Age-based retention: `php artisan laravel-trace:prune` deletes completed
+  or failed traces (and their spans) started before a cutoff, via a new
+  `TracePruner` contract (`InMemoryTracePruner` / `DatabaseTracePruner`,
+  resolved from `laravel-trace.storage.driver`) with `PruneCriteria` /
+  `PruneResult` value objects. Options: `--days`, `--before`, `--chunk`,
+  `--dry-run`, `--force`. Configure via `storage.retention.{enabled,days,chunk_size}`
+  (`enabled` defaults `false`, so a fresh install never deletes anything on
+  its own). A still-`Running` trace is never pruned, regardless of age -
+  only `Completed`/`Failed` traces are eligible. Deletion walks a
+  deterministic `id`-ordered keyset cursor in configurable-size chunks,
+  deletes spans before traces explicitly (not relying on the `trace_id`
+  foreign key's cascade), and is safe to re-run after a partial failure.
+  Database failures during pruning propagate rather than being swallowed.
+  The package does not register a scheduler entry; consuming applications
+  schedule the command themselves.
+- `laravel_traces` gains a `started_at` index to support pruning's cutoff
+  scan.
 
 ### Changed
 

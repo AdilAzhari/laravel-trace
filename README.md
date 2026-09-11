@@ -142,7 +142,61 @@ Notes and limits for this release:
 - Pagination is offset-based only.
 - The `memory` driver only sees what the current process recorded; it does
   not persist between requests.
-- There is no dashboard, HTTP API, retention/pruning, or exporter yet.
+- There is no dashboard, HTTP API, or exporter yet.
+
+### Pruning old traces
+
+Traces and spans accumulate forever unless you prune them. Publish and run
+the migration (above), then set a retention window:
+
+```php
+// config/laravel-trace.php
+'storage' => [
+    'retention' => [
+        'enabled' => false, // a fresh install never deletes anything on its own
+        'days' => 7,
+        'chunk_size' => 500,
+    ],
+],
+```
+
+and run:
+
+```bash
+php artisan laravel-trace:prune
+```
+
+```
+Options:
+  --days=N      Prune traces started more than N days ago, overriding retention.days
+  --before=DATE Prune traces started before this date/time, overriding --days
+  --chunk=N     Traces deleted per batch, overriding retention.chunk_size
+  --dry-run     Report exact matching counts without deleting anything
+  --force       Skip the confirmation prompt
+```
+
+Notes:
+
+- **Only completed or failed traces are pruned.** A still-`Running` trace is
+  never deleted, no matter how old - handling traces abandoned by a crashed
+  process is left to a future release. Age is measured from `started_at`.
+- If `retention.enabled` is `false` and neither `--days` nor `--before` is
+  given, the command explains that and exits successfully without deleting
+  anything - safe to leave in a scheduled job while retention is off.
+  Passing `--days`/`--before` explicitly always runs the prune, regardless
+  of `enabled`.
+- `--dry-run` runs the exact same eligibility query real pruning would and
+  reports precisely what it matched, without deleting.
+- A database failure during pruning is never swallowed - unlike recording,
+  a failed maintenance run needs to be visible.
+- Under the `memory` driver, the command explains that it has nothing to
+  prune: the in-memory store belongs to the process that recorded it and
+  does not persist between separate `artisan` invocations.
+- **The package does not schedule this command for you.** Add it to your
+  own application's scheduler, e.g. in `routes/console.php`:
+  ```php
+  Schedule::command('laravel-trace:prune --force')->daily();
+  ```
 
 ## Changelog
 

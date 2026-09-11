@@ -25,6 +25,31 @@ return [
             'swallow_exceptions' => true,
 
         ],
+
+        'retention' => [
+
+            /*
+             * Whether `php artisan laravel-trace:prune` deletes anything
+             * when run with no --days/--before override. Off by default so
+             * a fresh install never starts deleting traces on its own.
+             */
+            'enabled' => false,
+
+            /*
+             * Traces (and their spans) older than this many days are
+             * eligible for pruning. Only terminal traces (completed or
+             * failed) are ever pruned - a still-running trace is never
+             * deleted, however old.
+             */
+            'days' => 7,
+
+            /*
+             * How many traces the pruner deletes per batch. Bounds how long
+             * any single delete statement runs for.
+             */
+            'chunk_size' => 500,
+
+        ],
     ],
 
     'database' => [

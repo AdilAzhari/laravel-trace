@@ -31,6 +31,11 @@ final class InMemorySpanStore
         return $this->spans[$id] ?? null;
     }
 
+    public function forget(string $id): void
+    {
+        unset($this->spans[$id]);
+    }
+
     /**
      * @return list<Span>
      */

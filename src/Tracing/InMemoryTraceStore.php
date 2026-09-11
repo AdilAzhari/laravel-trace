@@ -31,6 +31,11 @@ final class InMemoryTraceStore
         return $this->traces[$id] ?? null;
     }
 
+    public function forget(string $id): void
+    {
+        unset($this->traces[$id]);
+    }
+
     /**
      * @return list<Trace>
      */
