@@ -61,7 +61,207 @@ php artisan vendor:publish --tag="laravel-trace-assets"
 
 ## Usage
 
-<!-- Add a basic usage example here. -->
+### Registering the middleware
+
+Laravel Trace never attaches itself to a route automatically. To trace HTTP
+requests, register `TraceRequest` wherever you want tracing to start - a
+route, a group, or every request.
+
+```php
+// routes/web.php
+use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+
+Route::middleware(TraceRequest::class)->group(function () {
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+});
+```
+
+To trace every request instead, append it in `bootstrap/app.php`:
+
+```php
+use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+use Illuminate\Foundation\Configuration\Middleware;
+
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->append(TraceRequest::class);
+})
+```
+
+Without this middleware - or a manual `Tracer::start()` call, below - nothing
+is traced: database queries, events, and queue jobs are only instrumented
+while a trace is already active.
+
+### Basic HTTP tracing
+
+Once the middleware is applied to a route, every matching request is wrapped
+in a trace and an `http.request` span with no further code:
+
+```php
+Route::middleware(TraceRequest::class)->get('/orders/{order}', function (Order $order) {
+    return $order->fresh('items');
+});
+```
+
+- The trace is named `http.request`, with `http.method` and `http.path`
+  attributes captured up front.
+- The span records `http.status_code` on success; if the route throws, the
+  span and trace are both failed with the exception recorded, and the
+  exception is rethrown unchanged.
+- The trace context is always cleared once the response is produced -
+  successfully or not - so it never leaks into whatever handles the next
+  request in the same process.
+
+### Manual instrumentation
+
+For anything outside a traced HTTP request - a console command, a scheduled
+task, or extra detail inside one - instrument code directly with the
+`Tracer` contract (there's no facade for the write side; resolve it from the
+container or inject `AdilAzhari\LaravelTrace\Contracts\Tracer`):
+
+```php
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+
+$tracer = app(Tracer::class);
+
+$trace = $tracer->start('import.customers', ['source' => 'csv']);
+
+$span = $tracer->span('parse.file', SpanType::Action);
+
+try {
+    // ... do the work ...
+    $span->close();
+} catch (Throwable $exception) {
+    $span->fail($exception);
+    throw $exception;
+}
+
+$tracer->completeTrace($trace);
+```
+
+- `span()` throws `LogicException` if no trace is active yet - call
+  `start()` first, or only instrument code that runs inside a request/job/
+  listener that already has one.
+- `$span->attributes([...])` (alias: `addAttributes()`) adds to a span
+  before it closes; attributes are `string|int|float|bool|null` values only.
+
+### Nested spans
+
+Calling `span()` while another span is open nests it under whichever span is
+currently active, and closing a span restores its parent as the active one -
+parent/child relationships are never managed by hand:
+
+```php
+$outer = $tracer->span('process.order', SpanType::Action);
+$inner = $tracer->span('charge.payment', SpanType::Action);
+
+$inner->close(); // process.order becomes the active span again
+$outer->close();
+```
+
+### Automatic instrumentation
+
+Once a trace is active - via the middleware or a manual `start()` call - the
+following are recorded with no further code:
+
+| What | Span name | Type | Toggle |
+|---|---|---|---|
+| A database query | `database.query` | `SpanType::Database` | `laravel-trace.database.enabled` |
+| A non-queued event listener | `listener.<class>` | `SpanType::Listener` | on whenever a trace is active |
+| A queued job being processed | `queue.job` | `SpanType::Job` | `laravel-trace.queue.enabled` |
+
+Wildcard listeners and the package's own internal listeners are never
+wrapped, to avoid double-instrumenting and self-referential spans. A
+database *storage* write failure (as opposed to an application query) is
+caught, logged, and swallowed by default - see Database storage, below -
+instrumentation itself never throws just because a query ran.
+
+### Span types
+
+`AdilAzhari\LaravelTrace\Span\SpanType`:
+
+- `Http` - an HTTP request, recorded by the `TraceRequest` middleware.
+- `Database` - a SQL query, recorded by the automatic instrumentation.
+- `Listener` - a non-queued event listener, recorded automatically.
+- `Job` - a queued job being processed, recorded automatically.
+- `Action` - your own business-logic spans (manual instrumentation).
+- `Event` - your own domain-event-shaped spans (manual instrumentation) -
+  distinct from `Listener`, which is reserved for the framework's own event
+  dispatch.
+
+### Context propagation
+
+A trace's identity crosses process boundaries as a `TraceContext`: a trace
+ID and, if a span is active, the current span ID.
+
+**HTTP.** An inbound request carrying the `X-Trace-Context` header (format
+`<trace-id>` or `<trace-id>-<span-id>`, header name configurable via
+`laravel-trace.http.header`) continues the propagated trace rather than
+creating a new local root trace: `Tracer::start()` is never called for that
+request, but spans are still recorded against the propagated trace ID as
+normal. (The database storage driver additionally writes a placeholder
+`Running` trace row so those spans have a parent to reference - see
+Database storage, below - without ever creating a local `Trace` object.) A
+malformed header is ignored and a fresh local trace starts instead.
+Attaching the header to *outbound* requests made through Laravel's HTTP
+client is opt-in:
+
+```php
+// config/laravel-trace.php
+'http' => [
+    'propagate_outbound' => true,
+],
+```
+
+**Queues.** Dispatching a job while a trace is active automatically embeds
+the current context in the job's payload. When the job is processed, that
+context is restored before the job runs (and cleared again afterwards)
+whenever `laravel-trace.queue.enabled` is true - no extra code needed on
+either side of the dispatch.
+
+### Failure behavior
+
+- `Tracer::span()` throws `LogicException` when called with no active trace.
+- A write to the `database` storage driver failing (bad connection, missing
+  table) is logged and swallowed by default - see `storage.database.swallow_exceptions`
+  below - so tracing failures never break the request or job being traced.
+- Reading (`TraceReader`/`SpanReader`) and pruning (`TracePruner`) failures
+  are **not** swallowed; they propagate, since those are calls your own code
+  makes deliberately rather than ambient instrumentation.
+- If a process is killed or fatals mid-trace, whatever trace/spans were
+  already recorded stay `Running` permanently - there is no automatic
+  reconciliation for this yet, and pruning (below) never deletes a `Running`
+  row regardless of age.
+
+### Memory driver limitations
+
+The default `memory` driver is suitable mainly for short-lived debugging or
+tests, not for relying on in a real deployment. Two different things are
+involved here, and they don't share the same lifetime:
+
+- **The active trace context** - which trace/span is currently open - is
+  always cleared at the end of a request or job (by the `TraceRequest`
+  middleware's `finally` block, or by `QueueJobListener` once a job
+  finishes), regardless of how the underlying PHP process is managed.
+- **The underlying `InMemoryTraceStore`/`InMemorySpanStore`**, however, are
+  container singletons that only clear when the *application instance* they
+  belong to is torn down - not necessarily when the OS process is. Under a
+  classic (non-Octane) PHP-FPM or CLI request, Laravel rebuilds its
+  container from scratch on every request, so in practice this store never
+  outlives the request that created it, even though the underlying worker
+  process itself is commonly reused for the next one. A runtime that
+  deliberately keeps one application instance alive across many units of
+  work instead - a `queue:work` worker processing job after job, or an
+  Octane/Swoole worker serving request after request - keeps that same
+  store alive too, and it accumulates every trace and span recorded for as
+  long as the process runs, with nothing built in to bound it.
+- Nothing persists between separate `artisan`/request processes in any case
+  - see Querying and Pruning traces, below, for what that means for those
+  features specifically.
+
+Use the `database` driver (with retention pruning configured) rather than
+`memory` for anything beyond short-lived local debugging in a long-lived
+worker process.
 
 ### Database storage
 
