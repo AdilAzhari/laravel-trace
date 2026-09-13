@@ -2,6 +2,18 @@
 
 ## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...1.x)
 
+### Fixed
+
+- `database.query` span duration now reflects the real query time. `QueryExecuted`
+  fires only after a query has already finished, so the span was previously
+  opened and closed back-to-back at that point, making its own `duration_ms`
+  (and `Span::durationMs()`) a near-zero measurement of recording overhead
+  rather than the query itself - the real duration was only ever visible via
+  the `db.duration_ms` attribute. `DatabaseQueryListener` now backdates the
+  span's start time by the query's measured duration. `Contracts\Tracer::span()`
+  gained an optional `?DateTimeImmutable $startedAt` parameter to support
+  this (defaults to now; every other caller is unaffected).
+
 ### Added
 
 - Database storage driver: set `laravel-trace.storage.driver` to `database` to

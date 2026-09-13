@@ -73,6 +73,7 @@ final readonly class Tracer implements SpanCompleter, TracerContract
         string $name,
         SpanType $type,
         array $attributes = [],
+        ?DateTimeImmutable $startedAt = null,
     ): SpanScope {
         $previousContext = $this->context();
 
@@ -88,6 +89,7 @@ final readonly class Tracer implements SpanCompleter, TracerContract
             type: $type,
             parentId: $previousContext->spanId,
             attributes: $attributes,
+            startedAt: $startedAt,
         );
 
         $this->setContext(
