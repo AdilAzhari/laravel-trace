@@ -24,11 +24,19 @@ use Illuminate\Support\Carbon;
  * @property string|null $error_message
  * @property string|null $error_file
  * @property int|null $error_line
- * @property array<string, string|int|float|bool|null> $attributes
+ * @property array<string, string|int|float|bool|null>|null $attributes
  */
 final class TraceRecord extends Model
 {
     protected $table = 'laravel_traces';
+
+    /**
+     * Keep sub-second precision when the underlying driver stores datetimes
+     * as text (SQLite). The migration declares microsecond columns; without
+     * this format Eloquent would write and read them at second precision,
+     * so a database-hydrated trace would not match its in-memory twin.
+     */
+    protected $dateFormat = 'Y-m-d H:i:s.u';
 
     protected $primaryKey = 'id';
 
