@@ -5,8 +5,10 @@ declare(strict_types=1);
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
 use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Tracing\DatabaseQueryListener;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -77,6 +79,34 @@ it('records database query metadata inside an active trace', function (): void {
         ->and($span->attributes['db.duration_ms'])
         ->toBeFloat()
         ->toBeFloat();
+});
+
+it('computes the span duration from the real query time, not the recording overhead', function (): void {
+    $tracer = app(Tracer::class);
+
+    $tracer->start('DatabaseTest', []);
+
+    // A real "select 1" against SQLite completes far too fast to
+    // distinguish a correct duration from the bug (both round to ~0ms), so
+    // the query time is supplied directly via a synthetic QueryExecuted
+    // event, exactly like the framework fires for a real query.
+    app(DatabaseQueryListener::class)->handle(new QueryExecuted(
+        'select 1',
+        [],
+        250.0,
+        DB::connection(),
+    ));
+
+    $span = collect(app(InMemorySpanRecorder::class)->all())
+        ->firstWhere('type', SpanType::Database);
+
+    expect($span)->not->toBeNull()
+        // Must reflect the real ~250ms query time, not the near-zero time
+        // it takes to construct and close the span object itself.
+        ->and($span->durationMs())->toBeGreaterThanOrEqual(250.0)
+        ->and($span->durationMs())->toBeLessThan(250.0 + 500.0)
+        ->and($span->startedAt)->toBeLessThan($span->finishedAt)
+        ->and($span->attributes['db.duration_ms'])->toBe(250.0);
 });
 
 it('does not record database queries when database tracing is disabled', function (): void {
