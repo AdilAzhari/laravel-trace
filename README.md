@@ -263,6 +263,36 @@ Use the `database` driver (with retention pruning configured) rather than
 `memory` for anything beyond short-lived local debugging in a long-lived
 worker process.
 
+If you must keep using the `memory` driver inside a long-lived worker,
+`InMemoryStorageCleaner` gives you an explicit way to bound that growth
+yourself, at whatever boundary you choose:
+
+```php
+use AdilAzhari\LaravelTrace\Tracing\InMemoryStorageCleaner;
+
+app(InMemoryStorageCleaner::class)->clear();
+```
+
+This empties both `InMemoryTraceStore` and `InMemorySpanStore` together, so
+you never clear one and leave the other stale. A few things to note:
+
+- **It is entirely caller-controlled.** The package never calls this
+  automatically at request or job termination - doing so would silently
+  break reading back what the current process just recorded, which the
+  `memory` driver otherwise supports for the life of the application
+  instance. You decide when clearing is safe for your worker - e.g. once
+  per iteration of a `queue:work` loop, after you've read back anything you
+  needed.
+- **It has no effect on the `database` driver.** It only touches the two
+  in-memory singletons directly; database rows are untouched either way.
+  Retention pruning (below) remains the supported mechanism for bounding
+  persistent database storage.
+- **It is separate from clearing the active trace context.** Clearing what
+  trace/span is currently open (handled automatically, per above) and
+  clearing what has already been recorded are two different concerns.
+- This is not automatic eviction or a size-based policy - just an explicit
+  operation you can call when you know it's safe to.
+
 ### Database storage
 
 By default, traces and spans are held in memory for the lifetime of the

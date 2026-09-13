@@ -64,3 +64,12 @@ it('preserves insertion order across distinct spans', function (): void {
 
     expect($store->all())->toEqual([$first, $second]);
 });
+
+it('flushes all spans', function (): void {
+    $store = new InMemorySpanStore;
+    $store->put(Span::start(TraceId::generate(), 'ReserveInventory', SpanType::Action));
+
+    $store->flush();
+
+    expect($store->all())->toBe([]);
+});
