@@ -33,6 +33,7 @@ use AdilAzhari\LaravelTrace\Tracing\DatabaseQueryListener;
 use AdilAzhari\LaravelTrace\Tracing\EventListenerTracer;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanStore;
+use AdilAzhari\LaravelTrace\Tracing\InMemoryStorageCleaner;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceStore;
 use AdilAzhari\LaravelTrace\Tracing\QueueJobListener;
@@ -78,6 +79,7 @@ class LaravelTraceServiceProvider extends ServiceProvider
 
         $this->app->singleton(InMemoryTraceStore::class);
         $this->app->singleton(InMemorySpanStore::class);
+        $this->app->singleton(InMemoryStorageCleaner::class);
 
         $this->app->singleton(InMemorySpanRecorder::class);
         $this->app->singleton(DatabaseSpanRecorder::class);
