@@ -24,6 +24,26 @@
   raw `(bool)` cast, so a non-native-bool string is read correctly rather
   than with PHP's usual (and wrong, for this purpose) truthy cast.
 
+### Removed
+
+Pre-1.0 package-hygiene cleanup: unused skeleton scaffolding left over from
+the package template, never referenced by any documented feature, test, or
+public API.
+
+- **Breaking:** the `laravel-trace:placeholder` Artisan command
+  (`LaravelTraceCommand`). It was never documented; the only supported
+  command remains `laravel-trace:prune`.
+- **Breaking:** the placeholder view, translation file, and route
+  (`resources/views/placeholder.blade.php`, `lang/en/messages.php`,
+  `routes/laravel-trace.php`), and their `laravel-trace-views`,
+  `laravel-trace-lang`, and `laravel-trace-assets` publish tags. None of
+  these were referenced anywhere in the package or documented as something
+  a consumer needed to publish.
+- `Config\TraceConfig` - dead code with no container binding, factory, or
+  caller anywhere in the package.
+- `Contracts\SpanScopeManager` - an interface with no implementation,
+  binding, or reference anywhere in the package.
+
 ### Fixed
 
 - `database.query` span duration now reflects the real query time. `QueryExecuted`

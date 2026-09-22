@@ -41,24 +41,6 @@ php artisan vendor:publish --tag="laravel-trace-migrations"
 php artisan migrate
 ```
 
-### Publishing the Views
-
-```bash
-php artisan vendor:publish --tag="laravel-trace-views"
-```
-
-### Publishing the Translations
-
-```bash
-php artisan vendor:publish --tag="laravel-trace-lang"
-```
-
-### Publishing the Public Assets
-
-```bash
-php artisan vendor:publish --tag="laravel-trace-assets"
-```
-
 ## Configuration
 
 Every setting in `config/laravel-trace.php` can be overridden from `.env`

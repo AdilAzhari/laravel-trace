@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AdilAzhari\LaravelTrace;
 
 use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
-use AdilAzhari\LaravelTrace\Console\Commands\LaravelTraceCommand;
 use AdilAzhari\LaravelTrace\Console\Commands\PruneTracesCommand;
 use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
 use AdilAzhari\LaravelTrace\Contracts\SpanReader;
@@ -214,10 +213,6 @@ class LaravelTraceServiceProvider extends ServiceProvider
     {
         $this->loadRoutesFrom(__DIR__.'/../workbench/routes/web.php');
 
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'laravel-trace');
-
-        $this->loadTranslationsFrom(__DIR__.'/../lang', 'laravel-trace');
-
         QueueFacade::createPayloadUsing(
             function (): array {
                 $context = $this->app->make(
@@ -268,24 +263,11 @@ class LaravelTraceServiceProvider extends ServiceProvider
             __DIR__.'/../config/laravel-trace.php' => config_path('laravel-trace.php'),
         ], ['laravel-trace', 'laravel-trace-config']);
 
-        $this->publishes([
-            __DIR__.'/../resources/views' => resource_path('views/vendor/laravel-trace'),
-        ], ['laravel-trace', 'laravel-trace-views']);
-
-        $this->publishes([
-            __DIR__.'/../lang' => $this->app->langPath('vendor/laravel-trace'),
-        ], ['laravel-trace', 'laravel-trace-lang']);
-
-        $this->publishes([
-            __DIR__.'/../public' => public_path('vendor/laravel-trace'),
-        ], ['laravel-trace', 'laravel-trace-assets']);
-
         $this->publishesMigrations([
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], ['laravel-trace', 'laravel-trace-migrations']);
 
         $this->commands([
-            LaravelTraceCommand::class,
             PruneTracesCommand::class,
         ]);
     }

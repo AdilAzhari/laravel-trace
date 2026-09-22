@@ -28,6 +28,9 @@ final class AttributeFilter
      * @template TModel of Model
      *
      * @param  Builder<TModel>  $builder
+     *
+     * @throws InvalidArgumentException if $key contains characters outside
+     *                                  letters, digits, "_", "-" and "."
      */
     public static function apply(Builder $builder, string $key, string|int|float|bool|null $value): void
     {
