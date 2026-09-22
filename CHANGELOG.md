@@ -2,6 +2,28 @@
 
 ## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...1.x)
 
+### Changed
+
+- **Breaking:** `laravel-trace.database.enabled` renamed to
+  `laravel-trace.instrumentation.database.enabled`, to remove the ambiguity
+  with the unrelated `storage.database.*` (database *storage driver*)
+  settings. No compatibility alias is provided - update any published
+  config or code reading the old key.
+- The following are now readable from `.env`: `LARAVEL_TRACE_ENABLED`,
+  `LARAVEL_TRACE_DATABASE_QUERY_ENABLED`, `LARAVEL_TRACE_QUEUE_ENABLED`,
+  `LARAVEL_TRACE_HTTP_PROPAGATE_OUTBOUND`, `LARAVEL_TRACE_STORAGE_DRIVER`,
+  `LARAVEL_TRACE_STORAGE_DATABASE_SWALLOW_EXCEPTIONS`,
+  `LARAVEL_TRACE_RETENTION_ENABLED`, `LARAVEL_TRACE_RETENTION_DAYS`,
+  `LARAVEL_TRACE_RETENTION_CHUNK_SIZE`. See the README's Configuration
+  section for the full key/env/default table.
+- The boolean toggles above (`enabled`, `instrumentation.database.enabled`,
+  `queue.enabled`, `http.propagate_outbound`,
+  `storage.database.swallow_exceptions`, `storage.retention.enabled` - not
+  `storage.driver` or the retention `days`/`chunk_size` integers) are now
+  parsed with a dedicated `ConfigBoolean::resolve()` helper instead of a
+  raw `(bool)` cast, so a non-native-bool string is read correctly rather
+  than with PHP's usual (and wrong, for this purpose) truthy cast.
+
 ### Fixed
 
 - `database.query` span duration now reflects the real query time. `QueryExecuted`

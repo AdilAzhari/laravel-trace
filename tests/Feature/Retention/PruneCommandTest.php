@@ -21,6 +21,20 @@ it('no-ops when retention is disabled and no override is given', function (): vo
     expect(TraceRecord::query()->count())->toBe(1);
 });
 
+it('treats a string "false" the same as boolean false for retention.enabled', function (): void {
+    // `(bool) 'false'` is `true` in plain PHP - a value that could come
+    // from `.env` via `LARAVEL_TRACE_RETENTION_ENABLED` must still leave
+    // retention disabled when read as the literal string "false".
+    recordTrace(makeTrace(status: TraceStatus::Completed, startedAt: new DateTimeImmutable('-30 days')));
+
+    config()->set('laravel-trace.storage.retention.enabled', 'false');
+
+    $this->artisan('laravel-trace:prune')
+        ->assertExitCode(Command::SUCCESS);
+
+    expect(TraceRecord::query()->count())->toBe(1);
+});
+
 it('overrides disabled retention with an explicit --days', function (): void {
     recordTrace(makeTrace(status: TraceStatus::Completed, startedAt: new DateTimeImmutable('-30 days')));
 

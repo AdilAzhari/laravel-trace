@@ -44,6 +44,22 @@ it('rethrows storage exceptions when swallow_exceptions is disabled', function (
         ->toThrow(QueryException::class);
 });
 
+it('treats a string "false" the same as boolean false for swallow_exceptions', function (): void {
+    // `(bool) 'false'` is `true` in plain PHP - a value that could come from
+    // `.env` via `LARAVEL_TRACE_STORAGE_DATABASE_SWALLOW_EXCEPTIONS` must
+    // still disable swallowing when read as the literal string "false".
+    config()->set('laravel-trace.storage.driver', 'database');
+    config()->set('laravel-trace.storage.database.swallow_exceptions', 'false');
+
+    Schema::dropIfExists('laravel_trace_spans');
+    Schema::dropIfExists('laravel_traces');
+
+    $recorder = app(DatabaseTraceRecorder::class);
+
+    expect(fn () => $recorder->record(Trace::start('CreateOrder')))
+        ->toThrow(QueryException::class);
+});
+
 it('stops attempting further writes for the rest of the request after the first failure', function (): void {
     config()->set('laravel-trace.storage.driver', 'database');
 

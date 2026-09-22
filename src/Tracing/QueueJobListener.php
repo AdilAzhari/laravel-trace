@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Tracing;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Context\TraceContext;
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Span\SpanType;
@@ -101,10 +102,10 @@ final class QueueJobListener
 
     private function isEnabled(): bool
     {
-        return (bool) $this->config->get(
+        return ConfigBoolean::resolve($this->config->get(
             'laravel-trace.queue.enabled',
             true,
-        );
+        ), true);
     }
 
     private function jobKey(object $job): int

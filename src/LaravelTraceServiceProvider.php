@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Console\Commands\LaravelTraceCommand;
 use AdilAzhari\LaravelTrace\Console\Commands\PruneTracesCommand;
 use AdilAzhari\LaravelTrace\Context\InMemoryTraceContextStore;
@@ -304,11 +305,11 @@ class LaravelTraceServiceProvider extends ServiceProvider
             function (RequestInterface $request): RequestInterface {
                 $config = $this->app->make(ConfigRepository::class);
 
-                if (! (bool) $config->get('laravel-trace.enabled', true)) {
+                if (! ConfigBoolean::resolve($config->get('laravel-trace.enabled', true), true)) {
                     return $request;
                 }
 
-                if (! (bool) $config->get('laravel-trace.http.propagate_outbound', false)) {
+                if (! ConfigBoolean::resolve($config->get('laravel-trace.http.propagate_outbound', false), false)) {
                     return $request;
                 }
 

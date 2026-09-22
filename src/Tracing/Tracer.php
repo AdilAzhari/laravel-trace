@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Tracing;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Context\TraceContext;
 use AdilAzhari\LaravelTrace\Contracts\SpanCompleter;
 use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
@@ -63,7 +64,7 @@ final readonly class Tracer implements SpanCompleter, TracerContract
     private function isEnabled(): bool
     {
         return $this->config === null
-            || $this->config->get('laravel-trace.enabled', true);
+            || ConfigBoolean::resolve($this->config->get('laravel-trace.enabled', true), true);
     }
 
     /**
