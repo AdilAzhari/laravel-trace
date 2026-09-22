@@ -18,56 +18,43 @@ use InvalidArgumentException;
  *
  * Inert, like {@see TraceQuery}: a {@see SpanReader}
  * interprets it, and the in-memory and database readers must agree on the
- * result. Every `where*` / `order*` method returns a new instance.
+ * result. Every `where*` / `order*` method returns a new instance; the
+ * class is `readonly`, so the original can never be mutated, directly or
+ * otherwise.
  */
-final class SpanQuery
+final readonly class SpanQuery
 {
     /** @var list<string> */
     public const array SORTABLE_FIELDS = ['started_at', 'finished_at', 'duration_ms', 'name', 'type'];
 
-    /** @var list<string> */
-    public array $ids = [];
-
-    /** @var list<string> */
-    public array $traceIds = [];
-
-    /** @var list<string> */
-    public array $parentIds = [];
-
-    /** @var list<SpanType> */
-    public array $types = [];
-
-    /** @var list<SpanStatus> */
-    public array $statuses = [];
-
     /**
-     * `null` = any, `true` = only spans with no parent (trace roots).
+     * @param  list<string>  $ids
+     * @param  list<string>  $traceIds
+     * @param  list<string>  $parentIds
+     * @param  list<SpanType>  $types
+     * @param  list<SpanStatus>  $statuses
+     * @param  bool|null  $rootsOnly  `null` = any, `true` = only spans with
+     *                                no parent (trace roots).
+     * @param  bool|null  $hasError  `null` = any, `true` = only spans that
+     *                               failed with an error, `false` = only
+     *                               spans without an error.
+     * @param  array<string, string|int|float|bool|null>  $attributes
      */
-    public ?bool $rootsOnly = null;
-
-    public ?DateTimeImmutable $startedAfter = null;
-
-    public ?DateTimeImmutable $startedBefore = null;
-
-    public ?float $minDurationMs = null;
-
-    public ?float $maxDurationMs = null;
-
-    /**
-     * `null` = any, `true` = only spans that failed with an error,
-     * `false` = only spans without an error.
-     */
-    public ?bool $hasError = null;
-
-    /** @var array<string, string|int|float|bool|null> */
-    public array $attributes = [];
-
-    public OrderBy $orderBy;
-
-    public function __construct()
-    {
-        $this->orderBy = new OrderBy('started_at', 'desc');
-    }
+    public function __construct(
+        public array $ids = [],
+        public array $traceIds = [],
+        public array $parentIds = [],
+        public array $types = [],
+        public array $statuses = [],
+        public ?bool $rootsOnly = null,
+        public ?DateTimeImmutable $startedAfter = null,
+        public ?DateTimeImmutable $startedBefore = null,
+        public ?float $minDurationMs = null,
+        public ?float $maxDurationMs = null,
+        public ?bool $hasError = null,
+        public array $attributes = [],
+        public OrderBy $orderBy = new OrderBy('started_at', 'desc'),
+    ) {}
 
     public static function new(): self
     {
@@ -76,106 +63,67 @@ final class SpanQuery
 
     public function whereId(SpanId|string ...$ids): self
     {
-        $clone = clone $this;
-        $clone->ids = self::stringify(...$ids);
-
-        return $clone;
+        return $this->with(ids: self::stringify(...$ids));
     }
 
     public function whereTrace(TraceId|string ...$traceIds): self
     {
-        $clone = clone $this;
-        $clone->traceIds = self::stringify(...$traceIds);
-
-        return $clone;
+        return $this->with(traceIds: self::stringify(...$traceIds));
     }
 
     public function whereParent(SpanId|string ...$parentIds): self
     {
-        $clone = clone $this;
-        $clone->parentIds = self::stringify(...$parentIds);
-
-        return $clone;
+        return $this->with(parentIds: self::stringify(...$parentIds));
     }
 
     public function whereType(SpanType ...$types): self
     {
-        $clone = clone $this;
-        $clone->types = array_values($types);
-
-        return $clone;
+        return $this->with(types: array_values($types));
     }
 
     public function whereStatus(SpanStatus ...$statuses): self
     {
-        $clone = clone $this;
-        $clone->statuses = array_values($statuses);
-
-        return $clone;
+        return $this->with(statuses: array_values($statuses));
     }
 
     public function onlyRoots(): self
     {
-        $clone = clone $this;
-        $clone->rootsOnly = true;
-
-        return $clone;
+        return $this->with(rootsOnly: true);
     }
 
     public function startedAfter(DateTimeInterface $at): self
     {
-        $clone = clone $this;
-        $clone->startedAfter = self::toImmutable($at);
-
-        return $clone;
+        return $this->with(startedAfter: self::toImmutable($at));
     }
 
     public function startedBefore(DateTimeInterface $at): self
     {
-        $clone = clone $this;
-        $clone->startedBefore = self::toImmutable($at);
-
-        return $clone;
+        return $this->with(startedBefore: self::toImmutable($at));
     }
 
     public function minDurationMs(float|int $milliseconds): self
     {
-        $clone = clone $this;
-        $clone->minDurationMs = (float) $milliseconds;
-
-        return $clone;
+        return $this->with(minDurationMs: (float) $milliseconds);
     }
 
     public function maxDurationMs(float|int $milliseconds): self
     {
-        $clone = clone $this;
-        $clone->maxDurationMs = (float) $milliseconds;
-
-        return $clone;
+        return $this->with(maxDurationMs: (float) $milliseconds);
     }
 
     public function onlyErrors(): self
     {
-        $clone = clone $this;
-        $clone->hasError = true;
-
-        return $clone;
+        return $this->with(hasError: true);
     }
 
     public function withoutErrors(): self
     {
-        $clone = clone $this;
-        $clone->hasError = false;
-
-        return $clone;
+        return $this->with(hasError: false);
     }
 
     public function whereAttribute(string $key, string|int|float|bool|null $value): self
     {
-        $clone = clone $this;
-        $clone->attributes = [...$this->attributes, $key => $value];
-
-        return $clone;
+        return $this->with(attributes: [...$this->attributes, $key => $value]);
     }
 
     /**
@@ -194,10 +142,7 @@ final class SpanQuery
             ));
         }
 
-        $clone = clone $this;
-        $clone->orderBy = new OrderBy($field, $direction);
-
-        return $clone;
+        return $this->with(orderBy: new OrderBy($field, $direction));
     }
 
     public function latest(): self
@@ -226,5 +171,19 @@ final class SpanQuery
         return $at instanceof DateTimeImmutable
             ? $at
             : DateTimeImmutable::createFromInterface($at);
+    }
+
+    /**
+     * Builds a new instance from the current one, with the given
+     * constructor arguments overridden. The only place this class
+     * constructs a modified copy of itself - every `where*`/`order*` method
+     * above is a thin wrapper around this. Named-argument unpacking matches
+     * each key in `$overrides` to the same-named constructor parameter, and
+     * `get_object_vars($this)` supplies the rest unchanged, so this stays
+     * correct without listing every property at each call site.
+     */
+    private function with(mixed ...$overrides): self
+    {
+        return new self(...[...get_object_vars($this), ...$overrides]);
     }
 }

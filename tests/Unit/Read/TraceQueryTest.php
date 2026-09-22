@@ -84,3 +84,50 @@ it('rejects a sort field that is not a real column', function (): void {
     expect(fn () => TraceQuery::new()->orderByField('sql'))
         ->toThrow(InvalidArgumentException::class);
 });
+
+it('is a final readonly class', function (): void {
+    $reflection = new ReflectionClass(TraceQuery::class);
+
+    expect($reflection->isFinal())->toBeTrue()
+        ->and($reflection->isReadOnly())->toBeTrue();
+});
+
+it('rejects direct assignment to a readonly property', function (): void {
+    $query = TraceQuery::new();
+
+    expect(fn () => $query->ids = ['hacked'])
+        ->toThrow(Error::class, 'Cannot modify readonly property');
+});
+
+it('rejects indirect mutation of a readonly array property', function (): void {
+    $query = TraceQuery::new()->whereId('01ID');
+
+    expect(fn () => $query->ids[] = 'hacked')
+        ->toThrow(Error::class, 'Cannot indirectly modify readonly property');
+
+    // The rejected mutation attempt must not have partially applied.
+    expect($query->ids)->toBe(['01ID']);
+});
+
+it('keeps every earlier instance in a chain unchanged as later calls are made', function (): void {
+    $empty = TraceQuery::new();
+    $withId = $empty->whereId('01ID');
+    $withIdAndName = $withId->whereName('http.request');
+    $withIdAndNameAndStatus = $withIdAndName->whereStatus(TraceStatus::Failed);
+
+    expect($empty->ids)->toBe([])
+        ->and($empty->names)->toBe([])
+        ->and($empty->statuses)->toBe([])
+        ->and($withId->ids)->toBe(['01ID'])
+        ->and($withId->names)->toBe([])
+        ->and($withId->statuses)->toBe([])
+        ->and($withIdAndName->ids)->toBe(['01ID'])
+        ->and($withIdAndName->names)->toBe(['http.request'])
+        ->and($withIdAndName->statuses)->toBe([])
+        ->and($withIdAndNameAndStatus->ids)->toBe(['01ID'])
+        ->and($withIdAndNameAndStatus->names)->toBe(['http.request'])
+        ->and($withIdAndNameAndStatus->statuses)->toBe([TraceStatus::Failed])
+        ->and($withIdAndNameAndStatus)->not->toBe($withIdAndName)
+        ->and($withIdAndName)->not->toBe($withId)
+        ->and($withId)->not->toBe($empty);
+});
