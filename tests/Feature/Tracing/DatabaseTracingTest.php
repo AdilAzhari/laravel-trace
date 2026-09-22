@@ -111,7 +111,7 @@ it('computes the span duration from the real query time, not the recording overh
 
 it('does not record database queries when database tracing is disabled', function (): void {
     config()->set(
-        'laravel-trace.database.enabled',
+        'laravel-trace.instrumentation.database.enabled',
         false,
     );
 
@@ -125,6 +125,46 @@ it('does not record database queries when database tracing is disabled', functio
 
     expect(collect($spans)->firstWhere('type', SpanType::Database))
         ->toBeNull();
+});
+
+it('treats a string "false" the same as boolean false for instrumentation.database.enabled', function (): void {
+    // `(bool) 'false'` is `true` in plain PHP - a value that could come
+    // from `.env` via `LARAVEL_TRACE_DATABASE_QUERY_ENABLED` must still
+    // disable database query instrumentation when read as the literal
+    // string "false".
+    config()->set(
+        'laravel-trace.instrumentation.database.enabled',
+        'false',
+    );
+
+    $tracer = app(Tracer::class);
+
+    $tracer->start('DatabaseTest', []);
+
+    DB::select('select 1');
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    expect(collect($spans)->firstWhere('type', SpanType::Database))
+        ->toBeNull();
+});
+
+it('ignores the old laravel-trace.database.enabled key at runtime', function (): void {
+    // The pre-rename key has no compatibility alias - setting it must not
+    // disable database query instrumentation, which only reads
+    // instrumentation.database.enabled (left at its default of true here).
+    config()->set('laravel-trace.database.enabled', false);
+
+    $tracer = app(Tracer::class);
+
+    $tracer->start('DatabaseTest', []);
+
+    DB::select('select 1');
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    expect(collect($spans)->firstWhere('type', SpanType::Database))
+        ->not->toBeNull();
 });
 
 it('does not trace database queries when tracing is globally disabled', function (): void {

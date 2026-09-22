@@ -59,6 +59,71 @@ php artisan vendor:publish --tag="laravel-trace-lang"
 php artisan vendor:publish --tag="laravel-trace-assets"
 ```
 
+## Configuration
+
+Every setting in `config/laravel-trace.php` can be overridden from `.env`
+without publishing the config file. Defaults shown below are what applies
+when the variable is unset.
+
+| Config key | Env variable | Type | Default | Purpose |
+|---|---|---|---|---|
+| `enabled` | `LARAVEL_TRACE_ENABLED` | bool | `true` | Master switch for the whole package. |
+| `instrumentation.database.enabled` | `LARAVEL_TRACE_DATABASE_QUERY_ENABLED` | bool | `true` | Records a span per SQL query. Not related to `storage.database.*` below - see "Database query instrumentation vs. database storage". |
+| `queue.enabled` | `LARAVEL_TRACE_QUEUE_ENABLED` | bool | `true` | Restores/records trace context around queued job processing. |
+| `http.propagate_outbound` | `LARAVEL_TRACE_HTTP_PROPAGATE_OUTBOUND` | bool | `false` | Attaches the active trace context to outbound `Http::` client requests. |
+| `http.header` | *(not env-driven)* | string | `X-Trace-Context` | Header name used for inbound/outbound context propagation. |
+| `storage.driver` | `LARAVEL_TRACE_STORAGE_DRIVER` | string | `memory` | Where traces/spans are persisted: `memory` or `database`. |
+| `storage.database.connection` | *(not env-driven)* | string\|null | `null` | Connection used by the `database` storage driver; `null` uses the app's default connection. |
+| `storage.database.swallow_exceptions` | `LARAVEL_TRACE_STORAGE_DATABASE_SWALLOW_EXCEPTIONS` | bool | `true` | Logs and swallows a database storage write failure instead of letting it throw. |
+| `storage.retention.enabled` | `LARAVEL_TRACE_RETENTION_ENABLED` | bool | `false` | Whether `laravel-trace:prune` deletes anything without an explicit `--days`/`--before`. |
+| `storage.retention.days` | `LARAVEL_TRACE_RETENTION_DAYS` | int | `7` | Age (in days) at which a terminal trace becomes eligible for pruning. |
+| `storage.retention.chunk_size` | `LARAVEL_TRACE_RETENTION_CHUNK_SIZE` | int | `500` | Traces deleted per batch by the pruner. |
+
+```dotenv
+# .env
+LARAVEL_TRACE_ENABLED=true
+LARAVEL_TRACE_DATABASE_QUERY_ENABLED=true
+LARAVEL_TRACE_QUEUE_ENABLED=true
+LARAVEL_TRACE_HTTP_PROPAGATE_OUTBOUND=false
+LARAVEL_TRACE_STORAGE_DRIVER=database
+LARAVEL_TRACE_STORAGE_DATABASE_SWALLOW_EXCEPTIONS=true
+LARAVEL_TRACE_RETENTION_ENABLED=true
+LARAVEL_TRACE_RETENTION_DAYS=7
+LARAVEL_TRACE_RETENTION_CHUNK_SIZE=500
+```
+
+Boolean env values accept `true`/`false`, `1`/`0`, or Laravel's `(true)`/`(false)`
+forms; an unset or empty value falls back to the default rather than being
+read as `false`.
+
+### Database query instrumentation vs. database storage
+
+These are two independent concerns that happen to share the word
+"database":
+
+- **`instrumentation.database.enabled`** - whether the package records a
+  span for every SQL query your application runs. This has nothing to do
+  with where traces/spans themselves are stored.
+- **`storage.database.*`** - configuration for the optional `database`
+  *storage driver* (connection, exception-swallowing) that traces/spans can
+  be persisted to instead of the default `memory` driver. See
+  [Database storage](#database-storage) below.
+
+You can, for example, run with SQL query instrumentation off
+(`LARAVEL_TRACE_DATABASE_QUERY_ENABLED=false`, so no `database.query` spans
+are recorded) while still persisting whatever traces/spans *are* recorded to
+the `database` storage driver, or vice versa - the two toggles are unrelated.
+
+### Breaking change: `database.enabled` renamed
+
+Pre-1.0, `laravel-trace.database.enabled` has been renamed to
+`laravel-trace.instrumentation.database.enabled` to remove the ambiguity
+with `storage.database.*` above. There is no compatibility alias for the old
+key - keeping one silently would reintroduce the exact ambiguity this rename
+fixes. If you have published `config/laravel-trace.php` or set
+`LARAVEL_TRACE_DATABASE_ENABLED` anywhere, update it to
+`instrumentation.database.enabled` / `LARAVEL_TRACE_DATABASE_QUERY_ENABLED`.
+
 ## Usage
 
 ### Registering the middleware
@@ -166,7 +231,7 @@ following are recorded with no further code:
 
 | What | Span name | Type | Toggle |
 |---|---|---|---|
-| A database query | `database.query` | `SpanType::Database` | `laravel-trace.database.enabled` |
+| A database query | `database.query` | `SpanType::Database` | `laravel-trace.instrumentation.database.enabled` |
 | A non-queued event listener | `listener.<class>` | `SpanType::Listener` | on whenever a trace is active |
 | A queued job being processed | `queue.job` | `SpanType::Job` | `laravel-trace.queue.enabled` |
 

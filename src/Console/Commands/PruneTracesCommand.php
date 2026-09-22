@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Console\Commands;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Contracts\TracePruner;
 use AdilAzhari\LaravelTrace\Retention\PruneCriteria;
 use AdilAzhari\LaravelTrace\Retention\PruneResult;
@@ -49,7 +50,7 @@ class PruneTracesCommand extends Command
         }
 
         $explicitOverride = $this->option('days') !== null || $this->option('before') !== null;
-        $enabled = (bool) $config->get('laravel-trace.storage.retention.enabled', false);
+        $enabled = ConfigBoolean::resolve($config->get('laravel-trace.storage.retention.enabled', false), false);
 
         if (! $enabled && ! $explicitOverride) {
             $this->components->info(

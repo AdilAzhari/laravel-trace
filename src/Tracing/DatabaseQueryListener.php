@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Tracing;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Span\SpanType;
 use AdilAzhari\LaravelTrace\Storage\RecordsWithoutTracing;
@@ -27,17 +28,17 @@ final readonly class DatabaseQueryListener
             return;
         }
 
-        if (! (bool) $this->config->get(
+        if (! ConfigBoolean::resolve($this->config->get(
             'laravel-trace.enabled',
             true,
-        )) {
+        ), true)) {
             return;
         }
 
-        if (! (bool) $this->config->get(
-            'laravel-trace.database.enabled',
+        if (! ConfigBoolean::resolve($this->config->get(
+            'laravel-trace.instrumentation.database.enabled',
             true,
-        )) {
+        ), true)) {
             return;
         }
 

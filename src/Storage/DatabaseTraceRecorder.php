@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Storage;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
 use AdilAzhari\LaravelTrace\Models\TraceRecord;
 use AdilAzhari\LaravelTrace\Trace\Trace;
@@ -50,10 +51,10 @@ final class DatabaseTraceRecorder implements TraceRecorder
         } catch (Throwable $exception) {
             $this->disabled = true;
 
-            if (! (bool) $this->config->get(
+            if (! ConfigBoolean::resolve($this->config->get(
                 'laravel-trace.storage.database.swallow_exceptions',
                 true,
-            )) {
+            ), true)) {
                 throw $exception;
             }
 
