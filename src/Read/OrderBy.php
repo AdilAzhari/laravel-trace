@@ -18,6 +18,9 @@ final readonly class OrderBy
     /** @var 'asc'|'desc' */
     public string $direction;
 
+    /**
+     * @throws InvalidArgumentException if $direction is not "asc" or "desc"
+     */
     public function __construct(
         public string $field,
         string $direction = 'desc',

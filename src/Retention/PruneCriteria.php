@@ -26,6 +26,9 @@ final readonly class PruneCriteria
      */
     public int $chunkSize;
 
+    /**
+     * @throws InvalidArgumentException if $chunkSize is not greater than zero
+     */
     public function __construct(
         public DateTimeImmutable $cutoff,
         int $chunkSize = 500,

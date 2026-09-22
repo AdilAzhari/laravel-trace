@@ -149,6 +149,12 @@ final class TraceQuery
         return $clone;
     }
 
+    /**
+     * @throws InvalidArgumentException if $field is not one of
+     *                                  self::SORTABLE_FIELDS, or if
+     *                                  $direction is not "asc"/"desc"
+     *                                  (via {@see OrderBy})
+     */
     public function orderByField(string $field, string $direction = 'desc'): self
     {
         if (! in_array($field, self::SORTABLE_FIELDS, true)) {
