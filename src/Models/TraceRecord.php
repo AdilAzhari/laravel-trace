@@ -12,7 +12,10 @@ use Illuminate\Support\Carbon;
  * The persisted representation of a {@see Trace}.
  *
  * Internal to the package's database storage driver: not published, and not
- * intended for consumers to extend or query directly this milestone.
+ * intended for consumers to extend or query directly.
+ *
+ * @internal Database-storage implementation detail; not part of the
+ *           package's public API.
  *
  * @property string $id
  * @property string $name

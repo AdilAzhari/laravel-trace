@@ -20,6 +20,9 @@ use AdilAzhari\LaravelTrace\Trace\TraceId;
  * writes through {@see self::toAttributes()} and the database reader
  * hydrates through {@see self::toDomain()}, so the two directions cannot
  * drift. Keeps {@see Span} itself free of any persistence awareness.
+ *
+ * @internal Database-storage implementation detail; not part of the
+ *           package's public API.
  */
 final class SpanRecordMapper
 {

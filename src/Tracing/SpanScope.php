@@ -60,6 +60,14 @@ final class SpanScope
     }
 
     /**
+     * Merges the given attributes into the span, keeping whatever was set
+     * before - it never replaces the existing set, so calling this more
+     * than once accumulates rather than overwriting. Exact alias of
+     * {@see self::addAttributes()}; the two exist as two natural spellings
+     * of the same operation, kept here so both read naturally at the call
+     * site depending on whether the span is being given its attributes for
+     * the first time or having more added to it later.
+     *
      * @param  array<string, string|int|float|bool|null>  $attributes
      */
     public function attributes(array $attributes): self
@@ -74,6 +82,11 @@ final class SpanScope
     }
 
     /**
+     * Merges the given attributes into the span, keeping whatever was set
+     * before - it never replaces the existing set. Exact alias of
+     * {@see self::attributes()}; see that method's docblock for why both
+     * exist.
+     *
      * @param  array<string, string|int|float|bool|null>  $attributes
      */
     public function addAttributes(array $attributes): self
