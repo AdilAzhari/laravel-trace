@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Http\Middleware;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Context\TraceContext;
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Span\SpanType;
@@ -105,7 +106,7 @@ final readonly class TraceRequest
     private function enabled(): bool
     {
         return $this->config === null
-            || (bool) $this->config->get('laravel-trace.enabled', true);
+            || ConfigBoolean::resolve($this->config->get('laravel-trace.enabled', true), true);
     }
 
     private function headerName(): string

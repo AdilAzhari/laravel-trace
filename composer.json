@@ -74,7 +74,7 @@
             "vendor/bin/phpstan analyse"
         ],
         "test:types": [
-            "vendor/bin/pest --type-coverage --min=100"
+            "vendor/bin/pest --type-coverage --no-cache --min=100"
         ],
         "test:unit": [
             "vendor/bin/pest --parallel"
