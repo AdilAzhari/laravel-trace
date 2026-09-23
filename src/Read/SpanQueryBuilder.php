@@ -153,6 +153,10 @@ final class SpanQueryBuilder
         return $this->reader->get($this->query);
     }
 
+    /**
+     * Materialises the matching set and returns its first span. Use
+     * {@see self::paginate()} when the set may be large.
+     */
     public function first(): ?Span
     {
         return $this->reader->get($this->query)->first();

@@ -405,14 +405,30 @@ $slowQueries = LaravelTrace::spans()
 
 You can also type-hint the contracts directly
 (`AdilAzhari\LaravelTrace\Contracts\TraceReader` /
-`SpanReader`) with an immutable `TraceQuery` / `SpanQuery`.
+`SpanReader`) with an immutable `TraceQuery` / `SpanQuery`. `SpanReader` also
+has a `children(SpanId $parentId): Collection` method - not exposed through
+the facade or `SpanQueryBuilder` - that returns the direct children of the
+given span (one level down only, not the full subtree), oldest first, on
+both drivers:
+
+```php
+use AdilAzhari\LaravelTrace\Contracts\SpanReader;
+
+$children = app(SpanReader::class)->children($span->id); // Collection<int, Span>
+```
 
 Notes and limits for this release:
 
 - Traces and spans can be filtered by id, name, status, started-at range,
   duration range, error presence, and attribute **equality**. Attribute
   filtering compiles to a cross-database JSON path lookup; `LIKE`,
-  containment, and nested attribute paths are not supported.
+  containment, and nested attribute paths are not supported. Attribute
+  *keys* are restricted to letters, digits, `_`, `-` and `.` - but only the
+  `database` driver enforces this, throwing `InvalidArgumentException` for
+  a key outside that set; the `memory` driver does not validate the key at
+  all (it simply never matches, since nothing was ever recorded under an
+  invalid key). Code that only ever ran against `memory` in tests can hit
+  this for the first time against `database` in production.
 - Sorting is limited to `started_at`, `finished_at`, `duration_ms`, `name`
   (and `type` for spans), always with a deterministic `id` tiebreak. The
   default order is newest first.
