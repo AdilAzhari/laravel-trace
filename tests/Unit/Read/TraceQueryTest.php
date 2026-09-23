@@ -103,7 +103,7 @@ it('rejects indirect mutation of a readonly array property', function (): void {
     $query = TraceQuery::new()->whereId('01ID');
 
     expect(fn () => $query->ids[] = 'hacked')
-        ->toThrow(Error::class, 'Cannot indirectly modify readonly property');
+        ->toThrow(Error::class, 'modify readonly property '.TraceQuery::class.'::$ids');
 
     // The rejected mutation attempt must not have partially applied.
     expect($query->ids)->toBe(['01ID']);

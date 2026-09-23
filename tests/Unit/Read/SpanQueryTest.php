@@ -89,7 +89,7 @@ it('rejects indirect mutation of a readonly array property', function (): void {
     $query = SpanQuery::new()->whereType(SpanType::Database);
 
     expect(fn () => $query->types[] = SpanType::Listener)
-        ->toThrow(Error::class, 'Cannot indirectly modify readonly property');
+        ->toThrow(Error::class, 'modify readonly property '.SpanQuery::class.'::$types');
 
     // The rejected mutation attempt must not have partially applied.
     expect($query->types)->toBe([SpanType::Database]);
