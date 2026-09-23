@@ -9,6 +9,9 @@ namespace AdilAzhari\LaravelTrace\Storage;
  * trace or span as "not to be traced". Without this, a database storage
  * driver would record its own writes as `database` spans, which in turn
  * record another write, recursing without end.
+ *
+ * @internal Package-internal recursion guard for the database storage
+ *           driver's own writes. Not part of the supported public API.
  */
 final class RecordsWithoutTracing
 {

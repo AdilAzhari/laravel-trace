@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Storage;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Contracts\SpanRecorder;
 use AdilAzhari\LaravelTrace\Models\SpanRecord;
 use AdilAzhari\LaravelTrace\Models\TraceRecord;
@@ -38,6 +39,7 @@ final class DatabaseSpanRecorder implements SpanRecorder
     public function __construct(
         private readonly ConfigRepository $config,
         private readonly LoggerInterface $logger,
+        private readonly SpanRecordMapper $mapper,
     ) {}
 
     public function record(Span $span): void
@@ -53,16 +55,16 @@ final class DatabaseSpanRecorder implements SpanRecorder
                 SpanRecord::on($this->connection())
                     ->updateOrCreate(
                         ['id' => $span->id->value],
-                        $this->toAttributes($span),
+                        $this->mapper->toAttributes($span),
                     );
             });
         } catch (Throwable $exception) {
             $this->disabled = true;
 
-            if (! (bool) $this->config->get(
+            if (! ConfigBoolean::resolve($this->config->get(
                 'laravel-trace.storage.database.swallow_exceptions',
                 true,
-            )) {
+            ), true)) {
                 throw $exception;
             }
 
@@ -83,28 +85,6 @@ final class DatabaseSpanRecorder implements SpanRecorder
                 'started_at' => $span->startedAt,
             ],
         );
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function toAttributes(Span $span): array
-    {
-        return [
-            'trace_id' => $span->traceId->value,
-            'parent_id' => $span->parentId?->value,
-            'name' => $span->name,
-            'type' => $span->type->value,
-            'status' => $span->status->value,
-            'started_at' => $span->startedAt,
-            'finished_at' => $span->finishedAt,
-            'duration_ms' => $span->durationMs(),
-            'error_type' => $span->error?->type,
-            'error_message' => $span->error?->message,
-            'error_file' => $span->error?->file,
-            'error_line' => $span->error?->line,
-            'attributes' => $span->attributes,
-        ];
     }
 
     private function connection(): ?string

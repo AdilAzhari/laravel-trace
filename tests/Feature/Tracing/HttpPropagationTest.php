@@ -157,6 +157,45 @@ it('attaches the active trace context to outbound requests when enabled', functi
     $scope->close();
 });
 
+it('treats the string "true" the same as boolean true for propagate_outbound', function (): void {
+    config()->set('laravel-trace.http.propagate_outbound', 'true');
+
+    Http::fake();
+
+    $tracer = app(Tracer::class);
+    $tracer->start('outbound');
+    $scope = $tracer->span('call.api', SpanType::Action);
+
+    Http::get('https://example.test/resource');
+
+    $expected = $tracer->context()?->toHeader();
+
+    Http::assertSent(function ($request) use ($expected): bool {
+        return $request->hasHeader(TraceRequest::DEFAULT_HEADER, $expected);
+    });
+
+    $scope->close();
+});
+
+it('treats the string "false" the same as boolean false for propagate_outbound', function (): void {
+    // `(bool) 'false'` is `true` in plain PHP - a value that could come
+    // from `.env` via `LARAVEL_TRACE_HTTP_PROPAGATE_OUTBOUND` must be read
+    // correctly when it is the literal string "false", not just the real
+    // boolean `false`.
+    config()->set('laravel-trace.http.propagate_outbound', 'false');
+
+    Http::fake();
+
+    $tracer = app(Tracer::class);
+    $tracer->start('outbound');
+
+    Http::get('https://example.test/resource');
+
+    Http::assertSent(function ($request): bool {
+        return ! $request->hasHeader(TraceRequest::DEFAULT_HEADER);
+    });
+});
+
 it('does not attach trace context to outbound requests by default', function (): void {
     Http::fake();
 

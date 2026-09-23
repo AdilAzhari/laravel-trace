@@ -7,12 +7,11 @@ namespace AdilAzhari\LaravelTrace\Tracing;
 use AdilAzhari\LaravelTrace\Contracts\TraceRecorder;
 use AdilAzhari\LaravelTrace\Trace\Trace;
 
-final class InMemoryTraceRecorder implements TraceRecorder
+final readonly class InMemoryTraceRecorder implements TraceRecorder
 {
-    /**
-     * @var array<string, Trace>
-     */
-    private array $traces = [];
+    public function __construct(
+        private InMemoryTraceStore $store = new InMemoryTraceStore,
+    ) {}
 
     /**
      * Idempotent by trace ID: a later record for the same trace (e.g. its
@@ -21,7 +20,7 @@ final class InMemoryTraceRecorder implements TraceRecorder
      */
     public function record(Trace $trace): void
     {
-        $this->traces[$trace->id->value] = $trace;
+        $this->store->put($trace);
     }
 
     /**
@@ -29,6 +28,6 @@ final class InMemoryTraceRecorder implements TraceRecorder
      */
     public function all(): array
     {
-        return array_values($this->traces);
+        return $this->store->all();
     }
 }

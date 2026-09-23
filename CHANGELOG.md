@@ -2,6 +2,60 @@
 
 ## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...1.x)
 
+### Changed
+
+- **Breaking:** `laravel-trace.database.enabled` renamed to
+  `laravel-trace.instrumentation.database.enabled`, to remove the ambiguity
+  with the unrelated `storage.database.*` (database *storage driver*)
+  settings. No compatibility alias is provided - update any published
+  config or code reading the old key.
+- The following are now readable from `.env`: `LARAVEL_TRACE_ENABLED`,
+  `LARAVEL_TRACE_DATABASE_QUERY_ENABLED`, `LARAVEL_TRACE_QUEUE_ENABLED`,
+  `LARAVEL_TRACE_HTTP_PROPAGATE_OUTBOUND`, `LARAVEL_TRACE_STORAGE_DRIVER`,
+  `LARAVEL_TRACE_STORAGE_DATABASE_SWALLOW_EXCEPTIONS`,
+  `LARAVEL_TRACE_RETENTION_ENABLED`, `LARAVEL_TRACE_RETENTION_DAYS`,
+  `LARAVEL_TRACE_RETENTION_CHUNK_SIZE`. See the README's Configuration
+  section for the full key/env/default table.
+- The boolean toggles above (`enabled`, `instrumentation.database.enabled`,
+  `queue.enabled`, `http.propagate_outbound`,
+  `storage.database.swallow_exceptions`, `storage.retention.enabled` - not
+  `storage.driver` or the retention `days`/`chunk_size` integers) are now
+  parsed with a dedicated `ConfigBoolean::resolve()` helper instead of a
+  raw `(bool)` cast, so a non-native-bool string is read correctly rather
+  than with PHP's usual (and wrong, for this purpose) truthy cast.
+
+### Removed
+
+Pre-1.0 package-hygiene cleanup: unused skeleton scaffolding left over from
+the package template, never referenced by any documented feature, test, or
+public API.
+
+- **Breaking:** the `laravel-trace:placeholder` Artisan command
+  (`LaravelTraceCommand`). It was never documented; the only supported
+  command remains `laravel-trace:prune`.
+- **Breaking:** the placeholder view, translation file, and route
+  (`resources/views/placeholder.blade.php`, `lang/en/messages.php`,
+  `routes/laravel-trace.php`), and their `laravel-trace-views`,
+  `laravel-trace-lang`, and `laravel-trace-assets` publish tags. None of
+  these were referenced anywhere in the package or documented as something
+  a consumer needed to publish.
+- `Config\TraceConfig` - dead code with no container binding, factory, or
+  caller anywhere in the package.
+- `Contracts\SpanScopeManager` - an interface with no implementation,
+  binding, or reference anywhere in the package.
+
+### Fixed
+
+- `database.query` span duration now reflects the real query time. `QueryExecuted`
+  fires only after a query has already finished, so the span was previously
+  opened and closed back-to-back at that point, making its own `duration_ms`
+  (and `Span::durationMs()`) a near-zero measurement of recording overhead
+  rather than the query itself - the real duration was only ever visible via
+  the `db.duration_ms` attribute. `DatabaseQueryListener` now backdates the
+  span's start time by the query's measured duration. `Contracts\Tracer::span()`
+  gained an optional `?DateTimeImmutable $startedAt` parameter to support
+  this (defaults to now; every other caller is unaffected).
+
 ### Added
 
 - Database storage driver: set `laravel-trace.storage.driver` to `database` to
@@ -12,6 +66,35 @@
   by default so tracing never breaks the host application; set
   `laravel-trace.storage.database.swallow_exceptions` to `false` to let it
   surface while debugging your setup.
+- Read API for persisted traces and spans: `TraceReader` / `SpanReader`
+  contracts, immutable `TraceQuery` / `SpanQuery` descriptions, and the
+  `LaravelTrace` facade (`trace()`, `traces()`, `span()`, `spans()`,
+  `spansForTrace()`, `spanTree()`). Filter by id, name, status, started-at
+  range, duration range, error presence, and attribute equality; sort by a
+  whitelisted column with a deterministic `id` tiebreak; offset pagination.
+  Which reader the container resolves follows `laravel-trace.storage.driver`,
+  and the `memory` and `database` drivers return identical results for the
+  same query. `SpanTree` builds the parent/child tree from a flat span list.
+- `laravel_traces` gains a `[name, started_at]` index and
+  `laravel_trace_spans` a `[type, started_at]` index to support the new
+  filters.
+- Age-based retention: `php artisan laravel-trace:prune` deletes completed
+  or failed traces (and their spans) started before a cutoff, via a new
+  `TracePruner` contract (`InMemoryTracePruner` / `DatabaseTracePruner`,
+  resolved from `laravel-trace.storage.driver`) with `PruneCriteria` /
+  `PruneResult` value objects. Options: `--days`, `--before`, `--chunk`,
+  `--dry-run`, `--force`. Configure via `storage.retention.{enabled,days,chunk_size}`
+  (`enabled` defaults `false`, so a fresh install never deletes anything on
+  its own). A still-`Running` trace is never pruned, regardless of age -
+  only `Completed`/`Failed` traces are eligible. Deletion walks a
+  deterministic `id`-ordered keyset cursor in configurable-size chunks,
+  deletes spans before traces explicitly (not relying on the `trace_id`
+  foreign key's cascade), and is safe to re-run after a partial failure.
+  Database failures during pruning propagate rather than being swallowed.
+  The package does not register a scheduler entry; consuming applications
+  schedule the command themselves.
+- `laravel_traces` gains a `started_at` index to support pruning's cutoff
+  scan.
 
 ### Changed
 
@@ -21,6 +104,18 @@
   has a parent row to reference before any span is recorded. Recorder
   implementations (including `InMemoryTraceRecorder`) must be idempotent by
   trace/span ID as a result.
+- `InMemorySpanRecorder` is now idempotent by span ID (it previously
+  appended), matching its contract and the `InMemoryTraceRecorder`.
+- The in-memory recorders now write through shared `InMemoryTraceStore` /
+  `InMemorySpanStore` singletons, so the in-memory readers see exactly what
+  was recorded.
+- `TraceRecord` / `SpanRecord` use a microsecond datetime format so the
+  microsecond precision the migration declares survives a round trip through
+  text-based drivers (SQLite); a database-hydrated trace/span now matches its
+  in-memory twin.
+- The trace/span column mapping moved into `TraceRecordMapper` /
+  `SpanRecordMapper`, shared by the database recorder and reader. Added
+  `Trace::durationMs()` to mirror `Span::durationMs()`.
 - Renamed the migration `..._create_laravel_trace_placeholder_table.php` to
   `..._create_laravel_trace_tables.php` and added `duration_ms`,
   microsecond-precision `started_at`/`finished_at`, and a composite

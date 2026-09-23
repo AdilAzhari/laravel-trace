@@ -48,11 +48,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress --no-scripts
           composer run prepare
 
+      # Static analysis is OS-independent. On Windows, parallel Larastan workers
+      # race to rewrite Testbench's bootstrap/cache/services.php and the rename
+      # fails with "Access is denied" while another worker holds the file.
       - name: PHPStan
+        if: runner.os != 'Windows'
         run: composer analyse
 
       - name: Linter

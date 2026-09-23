@@ -68,6 +68,22 @@ it('does not record job spans when queue tracing is disabled', function (): void
         ->toBeNull();
 });
 
+it('treats a string "false" the same as boolean false for queue.enabled', function (): void {
+    // `(bool) 'false'` is `true` in plain PHP - a value that could come
+    // from `.env` via `LARAVEL_TRACE_QUEUE_ENABLED` must still disable
+    // queue instrumentation when read as the literal string "false".
+    config()->set('laravel-trace.queue.enabled', 'false');
+
+    $tracer = app(Tracer::class);
+
+    $tracer->start('QueueTest');
+
+    app(QueueFactory::class)->connection('sync')->push(new TracedJob);
+
+    expect(collect(app(InMemorySpanRecorder::class)->all())->firstWhere('name', 'queue.job'))
+        ->toBeNull();
+});
+
 it('does not record job spans when there is no active trace', function (): void {
     app(QueueFactory::class)->connection('sync')->push(new TracedJob);
 

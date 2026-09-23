@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AdilAzhari\LaravelTrace\Tracing;
 
+use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Span\SpanType;
 use AdilAzhari\LaravelTrace\Storage\RecordsWithoutTracing;
+use DateTimeImmutable;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Database\Events\QueryExecuted;
 
@@ -26,17 +28,17 @@ final readonly class DatabaseQueryListener
             return;
         }
 
-        if (! (bool) $this->config->get(
+        if (! ConfigBoolean::resolve($this->config->get(
             'laravel-trace.enabled',
             true,
-        )) {
+        ), true)) {
             return;
         }
 
-        if (! (bool) $this->config->get(
-            'laravel-trace.database.enabled',
+        if (! ConfigBoolean::resolve($this->config->get(
+            'laravel-trace.instrumentation.database.enabled',
             true,
-        )) {
+        ), true)) {
             return;
         }
 
@@ -44,6 +46,12 @@ final readonly class DatabaseQueryListener
             return;
         }
 
+        // QueryExecuted fires only after the query has already finished, so
+        // the span is backdated by the query's own measured time; without
+        // this, startedAt and finishedAt would both land at "now" and the
+        // span's duration would reflect the near-zero cost of recording it
+        // rather than the real query time (which is otherwise only visible
+        // via the db.duration_ms attribute below).
         $scope = $this->tracer->span(
             name: 'database.query',
             type: SpanType::Database,
@@ -52,8 +60,18 @@ final readonly class DatabaseQueryListener
                 'db.duration_ms' => $event->time,
                 'db.sql' => $event->sql,
             ],
+            startedAt: $this->startedAt($event),
         );
 
         $scope->close();
+    }
+
+    private function startedAt(QueryExecuted $event): DateTimeImmutable
+    {
+        $elapsedMicroseconds = (int) round($event->time * 1000);
+
+        return (new DateTimeImmutable)->modify(
+            sprintf('-%d microseconds', $elapsedMicroseconds),
+        );
     }
 }
