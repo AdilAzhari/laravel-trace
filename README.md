@@ -214,14 +214,37 @@ following are recorded with no further code:
 | What | Span name | Type | Toggle |
 |---|---|---|---|
 | A database query | `database.query` | `SpanType::Database` | `laravel-trace.instrumentation.database.enabled` |
-| A non-queued event listener | `listener.<class>` | `SpanType::Listener` | on whenever a trace is active |
 | A queued job being processed | `queue.job` | `SpanType::Job` | `laravel-trace.queue.enabled` |
 
-Wildcard listeners and the package's own internal listeners are never
-wrapped, to avoid double-instrumenting and self-referential spans. A
-database *storage* write failure (as opposed to an application query) is
+A database *storage* write failure (as opposed to an application query) is
 caught, logged, and swallowed by default - see Database storage, below -
 instrumentation itself never throws just because a query ran.
+
+Event listeners are **not** traced automatically: the package leaves
+Laravel's event dispatcher untouched. To trace a listener, open a span
+yourself inside it:
+
+```php
+use AdilAzhari\LaravelTrace\Contracts\Tracer;
+use AdilAzhari\LaravelTrace\Span\SpanType;
+
+public function handle(OrderCreated $event): void
+{
+    $span = app(Tracer::class)->span('listener.SendOrderConfirmation', SpanType::Listener);
+
+    try {
+        // ... do the work ...
+        $span->close();
+    } catch (Throwable $exception) {
+        $span->fail($exception);
+        throw $exception;
+    }
+}
+```
+
+As with any manual span, `span()` throws `LogicException` when no trace is
+active, so only do this in listeners that run inside a traced request, job,
+or manually started trace.
 
 ### Span types
 
@@ -229,12 +252,13 @@ instrumentation itself never throws just because a query ran.
 
 - `Http` - an HTTP request, recorded by the `TraceRequest` middleware.
 - `Database` - a SQL query, recorded by the automatic instrumentation.
-- `Listener` - a non-queued event listener, recorded automatically.
+- `Listener` - an event listener you instrument yourself (manual
+  instrumentation; see above).
 - `Job` - a queued job being processed, recorded automatically.
 - `Action` - your own business-logic spans (manual instrumentation).
 - `Event` - your own domain-event-shaped spans (manual instrumentation) -
-  distinct from `Listener`, which is reserved for the framework's own event
-  dispatch.
+  distinct from `Listener`, which marks the work a listener does in
+  response to an event.
 
 ### Context propagation
 

@@ -17,16 +17,15 @@ use InvalidArgumentException;
  * `laravel-trace.storage.driver`, read live on every {@see self::record()}
  * call rather than once at construction time.
  *
- * This is the object actually bound to the `SpanRecorder` contract: it is
- * resolved once, early, as part of the container's
- * `'events' -> TracingEventDispatcher -> EventListenerTracer -> Tracer`
- * dependency chain (see {@see Tracer::isEnabled()}
- * for the same constraint on the `enabled` flag), well before test or
- * runtime config overrides to `laravel-trace.storage.driver` would have
- * taken effect. Picking the concrete recorder once at that point would
- * permanently bake in whichever driver was configured at that moment;
- * deferring the choice to each call keeps it live for the lifetime of the
- * request.
+ * This is the object actually bound to the `SpanRecorder` contract: a
+ * container singleton, injected into the singleton {@see Tracer} and then
+ * reused for the life of the application instance - across every request
+ * or job a long-lived worker handles (see {@see Tracer::isEnabled()} for
+ * the same constraint on the `enabled` flag). Picking the concrete recorder
+ * once, on first resolution, would permanently bake in whichever driver was
+ * configured at that moment and miss later test or runtime config overrides
+ * to `laravel-trace.storage.driver`; deferring the choice to each call
+ * keeps it live.
  */
 final readonly class StorageDrivenSpanRecorder implements SpanRecorder
 {
