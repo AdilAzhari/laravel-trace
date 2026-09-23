@@ -4,7 +4,6 @@ parameters:
         - src
         - config
         - database
-        - routes
     # This is a package: its config file lives at <package root>/config, not
     # the host application's config_path(), which Larastan's env()-outside-
     # of-config check defaults to and which does not exist during a plain
