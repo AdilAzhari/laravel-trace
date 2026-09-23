@@ -17,9 +17,9 @@ use InvalidArgumentException;
  * call rather than once at construction time.
  *
  * See {@see StorageDrivenSpanRecorder} for why this indirection exists: the
- * object bound to the `TraceRecorder` contract is resolved too early, during
- * container bootstrap, for a one-shot driver choice to observe config
- * changes made after boot.
+ * object bound to the `TraceRecorder` contract is a long-lived singleton, so
+ * a one-shot driver choice made on first resolution would not observe config
+ * changes made afterwards.
  */
 final readonly class StorageDrivenTraceRecorder implements TraceRecorder
 {

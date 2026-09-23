@@ -30,7 +30,6 @@ use AdilAzhari\LaravelTrace\Storage\StorageDrivenSpanRecorder;
 use AdilAzhari\LaravelTrace\Storage\StorageDrivenTraceRecorder;
 use AdilAzhari\LaravelTrace\Storage\TraceRecordMapper;
 use AdilAzhari\LaravelTrace\Tracing\DatabaseQueryListener;
-use AdilAzhari\LaravelTrace\Tracing\EventListenerTracer;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanStore;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryStorageCleaner;
@@ -38,11 +37,8 @@ use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceStore;
 use AdilAzhari\LaravelTrace\Tracing\QueueJobListener;
 use AdilAzhari\LaravelTrace\Tracing\Tracer;
-use AdilAzhari\LaravelTrace\Tracing\TracingEventDispatcher;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
-use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Queue\Events\JobExceptionOccurred;
@@ -165,8 +161,6 @@ class LaravelTraceServiceProvider extends ServiceProvider
             },
         );
 
-        $this->app->singleton(EventListenerTracer::class);
-
         $this->app->singleton(
             QueueJobListener::class,
             function (Application $app): QueueJobListener {
@@ -174,24 +168,6 @@ class LaravelTraceServiceProvider extends ServiceProvider
                     tracer: $app->make(TracerContract::class),
                     config: $app->make(ConfigRepository::class),
                 );
-            },
-        );
-
-        $this->app->singleton(
-            'events',
-            function (Application $app): TracingEventDispatcher {
-                return (new TracingEventDispatcher(
-                    listenerTracer: $app->make(EventListenerTracer::class),
-                    container: $app,
-                ))
-                    ->setQueueResolver(
-                        fn (): Queue => $app->make(QueueFactoryContract::class)->connection(),
-                    )
-                    ->setTransactionManagerResolver(
-                        fn (): mixed => $app->bound('db.transactions')
-                            ? $app->make('db.transactions')
-                            : null,
-                    );
             },
         );
 

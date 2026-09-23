@@ -44,6 +44,20 @@ public API.
 - `Contracts\SpanScopeManager` - an interface with no implementation,
   binding, or reference anywhere in the package.
 
+Automatic event-listener instrumentation, removed from the 1.0 scope:
+
+- **Breaking:** non-queued event listeners no longer receive an automatic
+  `listener.<class>` span. The package no longer replaces Laravel's `events`
+  dispatcher (`Tracing\TracingEventDispatcher` and
+  `Tracing\EventListenerTracer` are deleted): replacing it at provider
+  registration left the HTTP router and console kernel holding the original
+  dispatcher, so listeners registered through `Event::listen()` could miss
+  routing and console events. `app('events')` is now always Laravel's own
+  dispatcher. Database-query and queued-job instrumentation are unaffected.
+  To keep listener spans, open one inside the listener with
+  `$tracer->span(..., SpanType::Listener)` - see the README's "Automatic
+  instrumentation" section.
+
 ### Fixed
 
 - `database.query` span duration now reflects the real query time. `QueryExecuted`
