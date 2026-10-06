@@ -9,6 +9,11 @@ use AdilAzhari\LaravelTrace\Span\SpanId;
 use AdilAzhari\LaravelTrace\Trace\TraceId;
 use AdilAzhari\LaravelTrace\Trace\TraceStatus;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use Orchestra\Testbench\Concerns\WithWorkbench;
+
+// The /trace-test* routes are Workbench demo routes (workbench/routes/web.php),
+// loaded through Testbench's Workbench route discovery - never by the package.
+uses(WithWorkbench::class);
 
 it('persists a placeholder running trace row for a propagated request when using the database driver', function (): void {
     config()->set('laravel-trace.storage.driver', 'database');

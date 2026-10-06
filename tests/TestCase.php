@@ -19,6 +19,16 @@ abstract class TestCase extends Orchestra
         ];
     }
 
+    /**
+     * Workbench route discovery (see WithWorkbench) registers the demo
+     * routes in the `web` middleware group, whose cookie encryption needs
+     * an application key.
+     */
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
+    }
+
     protected function defineDatabaseMigrations(): void
     {
         $this->loadMigrationsFrom(

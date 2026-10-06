@@ -69,6 +69,11 @@ Automatic event-listener instrumentation, removed from the 1.0 scope:
   span's start time by the query's measured duration. `Contracts\Tracer::span()`
   gained an optional `?DateTimeImmutable $startedAt` parameter to support
   this (defaults to now; every other caller is unaffected).
+- The service provider no longer loads the Workbench demo routes
+  (`workbench/routes/web.php`). That directory is not shipped with the
+  package, so booting an installed copy tried to load a missing file; a
+  git or path install instead exposed the `/trace-test*` demo routes in the
+  host application. The package now registers no routes.
 
 ### Added
 
