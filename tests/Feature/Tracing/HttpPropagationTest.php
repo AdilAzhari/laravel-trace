@@ -89,6 +89,34 @@ it('fails the propagated span without recording a local trace when the request f
         ->toBeNull();
 });
 
+it('fails only the propagated span when laravel renders the exception as a server error', function (): void {
+    $traceId = TraceId::generate();
+    $spanId = SpanId::generate();
+
+    $this->postJson('/trace-test-failure', [], [
+        TraceRequest::DEFAULT_HEADER => $traceId->value.'-'.$spanId->value,
+    ])->assertStatus(500);
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    expect($spans)
+        ->toHaveCount(1)
+        ->and($spans[0]->status)
+        ->toBe(SpanStatus::Failed)
+        ->and($spans[0]->error?->message)
+        ->toBe('Something failed.')
+        ->and($spans[0]->traceId->value)
+        ->toBe($traceId->value)
+        ->and($spans[0]->parentId?->value)
+        ->toBe($spanId->value)
+        // The upstream service owns the trace: this request neither fails
+        // nor completes it.
+        ->and(app(InMemoryTraceRecorder::class)->all())
+        ->toBeEmpty()
+        ->and(app(Tracer::class)->context())
+        ->toBeNull();
+});
+
 it('starts a fresh local trace when no propagation header is supplied', function (): void {
     $this->postJson('/trace-test')->assertSuccessful();
 
