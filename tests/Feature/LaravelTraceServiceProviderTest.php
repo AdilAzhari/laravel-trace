@@ -10,8 +10,16 @@ use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
+
+it('does not register the workbench demo routes', function (): void {
+    $uris = collect($this->app->make('router')->getRoutes()->getRoutes())
+        ->map(fn (RouteDefinition $route): string => $route->uri());
+
+    expect($uris)->not->toContain('trace-test', 'trace-test-failure', 'trace-test/nested', 'trace-test/deep');
+});
 
 it('leaves the application on laravel\'s own event dispatcher', function (): void {
     expect(get_class($this->app->make('events')))->toBe(Dispatcher::class);

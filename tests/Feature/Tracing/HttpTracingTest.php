@@ -7,6 +7,11 @@ use AdilAzhari\LaravelTrace\Span\SpanType;
 use AdilAzhari\LaravelTrace\Trace\TraceStatus;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
+use Orchestra\Testbench\Concerns\WithWorkbench;
+
+// The /trace-test* routes are Workbench demo routes (workbench/routes/web.php),
+// loaded through Testbench's Workbench route discovery - never by the package.
+uses(WithWorkbench::class);
 
 it('starts a trace for an http request', function (): void {
     $tracer = app(Tracer::class);

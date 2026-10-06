@@ -11,6 +11,11 @@ use AdilAzhari\LaravelTrace\Trace\TraceId;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use Illuminate\Support\Facades\Http;
+use Orchestra\Testbench\Concerns\WithWorkbench;
+
+// The /trace-test* routes are Workbench demo routes (workbench/routes/web.php),
+// loaded through Testbench's Workbench route discovery - never by the package.
+uses(WithWorkbench::class);
 
 it('continues an upstream trace when the propagation header is present', function (): void {
     $traceId = TraceId::generate();
