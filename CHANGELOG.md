@@ -74,6 +74,15 @@ Automatic event-listener instrumentation, removed from the 1.0 scope:
   package, so booting an installed copy tried to load a missing file; a
   git or path install instead exposed the `/trace-test*` demo routes in the
   host application. The package now registers no routes.
+- `TraceRequest` recorded a request that ended in an unhandled exception as
+  `Completed` whenever Laravel's exception handler was active (i.e. in every
+  real application): the routing pipeline renders the exception into a 500
+  response before it reaches the middleware, so its `catch` block never ran.
+  A 5xx response carrying a rendered exception now fails the `http.request`
+  span, and the trace the request started, with that exception. A request
+  continuing a propagated trace fails only its span; the upstream trace is
+  left to its owner. 4xx responses, and a 5xx with no exception attached
+  (e.g. `response('', 500)`), still complete.
 - With `laravel-trace.enabled` set to false, `Tracer::completeTrace()` and
   `Tracer::failTrace()` still recorded the trace, so `TraceRequest` stored one
   completed trace per request while tracing was off. Both now skip recording

@@ -8,6 +8,8 @@ use AdilAzhari\LaravelTrace\Config\ConfigBoolean;
 use AdilAzhari\LaravelTrace\Context\TraceContext;
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Trace\Trace;
+use AdilAzhari\LaravelTrace\Tracing\SpanScope;
 use Closure;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Http\Request;
@@ -65,6 +67,14 @@ final readonly class TraceRequest
                 'http.status_code' => $response->getStatusCode(),
             ]);
 
+            $exception = $this->renderedServerError($response);
+
+            if ($exception !== null) {
+                $this->fail($scope, $trace, $exception);
+
+                return $response;
+            }
+
             $scope?->close();
 
             if ($trace !== null) {
@@ -73,19 +83,43 @@ final readonly class TraceRequest
 
             return $response;
         } catch (Throwable $exception) {
-            $scope?->fail($exception);
-
-            if ($trace !== null) {
-                $this->tracer->failTrace(
-                    trace: $trace,
-                    exception: $exception,
-                );
-            }
+            $this->fail($scope, $trace, $exception);
 
             throw $exception;
         } finally {
             $this->tracer->clearContext();
         }
+    }
+
+    private function fail(?SpanScope $scope, ?Trace $trace, Throwable $exception): void
+    {
+        $scope?->fail($exception);
+
+        if ($trace !== null) {
+            $this->tracer->failTrace(
+                trace: $trace,
+                exception: $exception,
+            );
+        }
+    }
+
+    /**
+     * With exception handling on, Laravel's routing pipeline renders an
+     * exception into a response before it reaches this middleware, so the
+     * catch block above never sees it. The rendered response keeps the
+     * exception on its public `$exception` property. Only server errors
+     * fail the trace: a 4xx (validation, not found, auth) is the request
+     * being handled correctly.
+     */
+    private function renderedServerError(Response $response): ?Throwable
+    {
+        if ($response->getStatusCode() < 500 || ! property_exists($response, 'exception')) {
+            return null;
+        }
+
+        return $response->exception instanceof Throwable
+            ? $response->exception
+            : null;
     }
 
     private function inboundContext(Request $request): ?TraceContext
