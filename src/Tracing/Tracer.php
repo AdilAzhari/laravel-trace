@@ -159,7 +159,11 @@ final readonly class Tracer implements SpanCompleter, TracerContract
             new DateTimeImmutable,
         );
 
-        $this->traceRecorder->record($completed);
+        // Mirrors start(): a trace started while disabled was never
+        // recorded, so its terminal state must not be recorded either.
+        if ($this->isEnabled()) {
+            $this->traceRecorder->record($completed);
+        }
 
         return $completed;
     }
@@ -173,7 +177,9 @@ final readonly class Tracer implements SpanCompleter, TracerContract
             finishedAt: new DateTimeImmutable,
         );
 
-        $this->traceRecorder->record($failed);
+        if ($this->isEnabled()) {
+            $this->traceRecorder->record($failed);
+        }
 
         return $failed;
     }
