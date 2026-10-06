@@ -86,3 +86,15 @@ it('fails the trace when the request fails', function (): void {
         ->and($tracer->context())
         ->toBeNull();
 });
+
+it('records no trace for an http request when tracing is disabled', function (): void {
+    config()->set('laravel-trace.enabled', false);
+
+    $this->postJson('/trace-test')
+        ->assertSuccessful();
+
+    expect(app(InMemoryTraceRecorder::class)->all())
+        ->toBeEmpty()
+        ->and(app(InMemorySpanRecorder::class)->all())
+        ->toBeEmpty();
+});

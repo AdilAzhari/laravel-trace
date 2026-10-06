@@ -74,6 +74,10 @@ Automatic event-listener instrumentation, removed from the 1.0 scope:
   package, so booting an installed copy tried to load a missing file; a
   git or path install instead exposed the `/trace-test*` demo routes in the
   host application. The package now registers no routes.
+- With `laravel-trace.enabled` set to false, `Tracer::completeTrace()` and
+  `Tracer::failTrace()` still recorded the trace, so `TraceRequest` stored one
+  completed trace per request while tracing was off. Both now skip recording
+  when disabled, mirroring `Tracer::start()`.
 
 ### Added
 
