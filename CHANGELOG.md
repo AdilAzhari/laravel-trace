@@ -1,8 +1,8 @@
 # Release Notes
 
-## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...main)
+## [Unreleased](https://github.com/AdilAzhariOmsan/laravel-trace/compare/v0.1.0...main)
 
-## [v0.1.0](https://github.com/adilazhari/laravel-trace/releases/tag/v0.1.0) - 2026-11-08
+## [v0.1.0](https://github.com/AdilAzhariOmsan/laravel-trace/releases/tag/v0.1.0) - 2026-11-08
 
 Initial pre-release.
 
