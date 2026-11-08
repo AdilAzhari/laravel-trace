@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...1.x)
+## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...main)
+
+## [v0.1.0](https://github.com/adilazhari/laravel-trace/releases/tag/v0.1.0) - 2026-11-08
+
+Initial pre-release.
 
 ### Changed
 
@@ -60,6 +64,10 @@ Automatic event-listener instrumentation, removed from the 1.0 scope:
 
 ### Fixed
 
+- A job that ran synchronously (`dispatch_sync()`) inside a traced request no
+  longer wipes the request's trace context when it finishes. The queue
+  listener now restores the context that was active before the job, so spans
+  recorded after the job stay attached to the request's trace.
 - `database.query` span duration now reflects the real query time. `QueryExecuted`
   fires only after a query has already finished, so the span was previously
   opened and closed back-to-back at that point, making its own `duration_ms`
@@ -152,8 +160,3 @@ Automatic event-listener instrumentation, removed from the 1.0 scope:
   `..._create_laravel_trace_tables.php` and added `duration_ms`,
   microsecond-precision `started_at`/`finished_at`, and a composite
   `[trace_id, started_at]` index.
-
-
-## [v0.1.0](https://github.com/adilazhari/laravel-trace/compare/...v0.1.0) - 202x-xx-xx
-
-Initial pre-release.
