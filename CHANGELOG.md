@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...1.x)
+## [Unreleased](https://github.com/adilazhari/laravel-trace/compare/v0.1.0...main)
+
+## [v0.1.0](https://github.com/adilazhari/laravel-trace/releases/tag/v0.1.0) - 2026-11-08
+
+Initial pre-release.
 
 ### Changed
 
@@ -44,8 +48,26 @@ public API.
 - `Contracts\SpanScopeManager` - an interface with no implementation,
   binding, or reference anywhere in the package.
 
+Automatic event-listener instrumentation, removed from the 1.0 scope:
+
+- **Breaking:** non-queued event listeners no longer receive an automatic
+  `listener.<class>` span. The package no longer replaces Laravel's `events`
+  dispatcher (`Tracing\TracingEventDispatcher` and
+  `Tracing\EventListenerTracer` are deleted): replacing it at provider
+  registration left the HTTP router and console kernel holding the original
+  dispatcher, so listeners registered through `Event::listen()` could miss
+  routing and console events. `app('events')` is now always Laravel's own
+  dispatcher. Database-query and queued-job instrumentation are unaffected.
+  To keep listener spans, open one inside the listener with
+  `$tracer->span(..., SpanType::Listener)` - see the README's "Automatic
+  instrumentation" section.
+
 ### Fixed
 
+- A job that ran synchronously (`dispatch_sync()`) inside a traced request no
+  longer wipes the request's trace context when it finishes. The queue
+  listener now restores the context that was active before the job, so spans
+  recorded after the job stay attached to the request's trace.
 - `database.query` span duration now reflects the real query time. `QueryExecuted`
   fires only after a query has already finished, so the span was previously
   opened and closed back-to-back at that point, making its own `duration_ms`
@@ -55,6 +77,24 @@ public API.
   span's start time by the query's measured duration. `Contracts\Tracer::span()`
   gained an optional `?DateTimeImmutable $startedAt` parameter to support
   this (defaults to now; every other caller is unaffected).
+- The service provider no longer loads the Workbench demo routes
+  (`workbench/routes/web.php`). That directory is not shipped with the
+  package, so booting an installed copy tried to load a missing file; a
+  git or path install instead exposed the `/trace-test*` demo routes in the
+  host application. The package now registers no routes.
+- `TraceRequest` recorded a request that ended in an unhandled exception as
+  `Completed` whenever Laravel's exception handler was active (i.e. in every
+  real application): the routing pipeline renders the exception into a 500
+  response before it reaches the middleware, so its `catch` block never ran.
+  A 5xx response carrying a rendered exception now fails the `http.request`
+  span, and the trace the request started, with that exception. A request
+  continuing a propagated trace fails only its span; the upstream trace is
+  left to its owner. 4xx responses, and a 5xx with no exception attached
+  (e.g. `response('', 500)`), still complete.
+- With `laravel-trace.enabled` set to false, `Tracer::completeTrace()` and
+  `Tracer::failTrace()` still recorded the trace, so `TraceRequest` stored one
+  completed trace per request while tracing was off. Both now skip recording
+  when disabled, mirroring `Tracer::start()`.
 
 ### Added
 
@@ -120,8 +160,3 @@ public API.
   `..._create_laravel_trace_tables.php` and added `duration_ms`,
   microsecond-precision `started_at`/`finished_at`, and a composite
   `[trace_id, started_at]` index.
-
-
-## [v0.1.0](https://github.com/adilazhari/laravel-trace/compare/...v0.1.0) - 202x-xx-xx
-
-Initial pre-release.

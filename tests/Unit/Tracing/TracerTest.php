@@ -165,3 +165,28 @@ it('records a failed trace', function (): void {
         ->and(app(InMemoryTraceRecorder::class)->all()[0]->status)
         ->toBe(TraceStatus::Failed);
 });
+
+it('records a manually instrumented listener span', function (): void {
+    $recorder = new InMemorySpanRecorder;
+
+    $tracer = new Tracer(
+        new InMemoryTraceContextStore,
+        $recorder,
+        new InMemoryTraceRecorder,
+    );
+
+    $trace = $tracer->start('CreateOrder');
+
+    $tracer->span('listener.SendOrderConfirmation', SpanType::Listener)->close();
+
+    expect($recorder->all())
+        ->toHaveCount(1)
+        ->and($recorder->all()[0]->type)
+        ->toBe(SpanType::Listener)
+        ->and($recorder->all()[0]->status)
+        ->toBe(SpanStatus::Completed)
+        ->and($recorder->all()[0]->traceId)
+        ->toBe($trace->id)
+        ->and($tracer->context()?->spanId)
+        ->toBeNull();
+});

@@ -57,9 +57,10 @@ final readonly class Tracer implements SpanCompleter, TracerContract
 
     /**
      * Read live rather than capturing a boolean at construction time: this
-     * class is resolved early via the container's 'events' -> event
-     * dispatcher -> listener tracer dependency chain, before test/runtime
-     * config overrides to 'laravel-trace.enabled' would have taken effect.
+     * class is a container singleton, resolved once and then reused for the
+     * life of the application instance - across every request or job a
+     * long-lived worker handles - so a value captured at construction would
+     * miss later test/runtime config overrides to 'laravel-trace.enabled'.
      */
     private function isEnabled(): bool
     {
@@ -158,7 +159,11 @@ final readonly class Tracer implements SpanCompleter, TracerContract
             new DateTimeImmutable,
         );
 
-        $this->traceRecorder->record($completed);
+        // Mirrors start(): a trace started while disabled was never
+        // recorded, so its terminal state must not be recorded either.
+        if ($this->isEnabled()) {
+            $this->traceRecorder->record($completed);
+        }
 
         return $completed;
     }
@@ -172,7 +177,9 @@ final readonly class Tracer implements SpanCompleter, TracerContract
             finishedAt: new DateTimeImmutable,
         );
 
-        $this->traceRecorder->record($failed);
+        if ($this->isEnabled()) {
+            $this->traceRecorder->record($failed);
+        }
 
         return $failed;
     }

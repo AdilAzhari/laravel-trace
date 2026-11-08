@@ -11,6 +11,11 @@ use AdilAzhari\LaravelTrace\Trace\TraceId;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use Illuminate\Support\Facades\Http;
+use Orchestra\Testbench\Concerns\WithWorkbench;
+
+// The /trace-test* routes are Workbench demo routes (workbench/routes/web.php),
+// loaded through Testbench's Workbench route discovery - never by the package.
+uses(WithWorkbench::class);
 
 it('continues an upstream trace when the propagation header is present', function (): void {
     $traceId = TraceId::generate();
@@ -78,6 +83,34 @@ it('fails the propagated span without recording a local trace when the request f
         ->toBe(SpanStatus::Failed)
         ->and($spans[0]->traceId->value)
         ->toBe($traceId->value)
+        ->and(app(InMemoryTraceRecorder::class)->all())
+        ->toBeEmpty()
+        ->and(app(Tracer::class)->context())
+        ->toBeNull();
+});
+
+it('fails only the propagated span when laravel renders the exception as a server error', function (): void {
+    $traceId = TraceId::generate();
+    $spanId = SpanId::generate();
+
+    $this->postJson('/trace-test-failure', [], [
+        TraceRequest::DEFAULT_HEADER => $traceId->value.'-'.$spanId->value,
+    ])->assertStatus(500);
+
+    $spans = app(InMemorySpanRecorder::class)->all();
+
+    expect($spans)
+        ->toHaveCount(1)
+        ->and($spans[0]->status)
+        ->toBe(SpanStatus::Failed)
+        ->and($spans[0]->error?->message)
+        ->toBe('Something failed.')
+        ->and($spans[0]->traceId->value)
+        ->toBe($traceId->value)
+        ->and($spans[0]->parentId?->value)
+        ->toBe($spanId->value)
+        // The upstream service owns the trace: this request neither fails
+        // nor completes it.
         ->and(app(InMemoryTraceRecorder::class)->all())
         ->toBeEmpty()
         ->and(app(Tracer::class)->context())

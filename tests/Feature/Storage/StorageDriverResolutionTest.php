@@ -15,12 +15,12 @@ use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 // `laravel-trace.storage.driver` is read live on every record() call (see
 // StorageDrivenTraceRecorder / StorageDrivenSpanRecorder) rather than once
 // when the SpanRecorder/TraceRecorder contract is first resolved, because
-// that first resolution happens too early - during container bootstrap,
-// via the 'events' -> TracingEventDispatcher -> EventListenerTracer ->
-// Tracer dependency chain - for a one-shot choice to observe a config
-// change made in a test body. These assertions are therefore behavioural
-// (where did the record end up?) rather than about the resolved instance's
-// type, which is always the same switching wrapper either way.
+// the bound object is a singleton that outlives any single config value -
+// a one-shot choice made on first resolution would not observe a config
+// change made afterwards, such as one in a test body. These assertions are
+// therefore behavioural (where did the record end up?) rather than about
+// the resolved instance's type, which is always the same switching wrapper
+// either way.
 
 it('routes recorded traces and spans to the memory driver by default', function (): void {
     $trace = Trace::start('CreateOrder');
