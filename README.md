@@ -6,7 +6,7 @@
     <a href="https://packagist.org/packages/adilazhari/laravel-trace"><img src="https://img.shields.io/packagist/v/adilazhari/laravel-trace.svg?style=flat-square" alt="Packagist"></a>
     <a href="https://packagist.org/packages/adilazhari/laravel-trace"><img src="https://img.shields.io/packagist/php-v/adilazhari/laravel-trace.svg?style=flat-square" alt="PHP from Packagist"></a>
     <a href="https://packagist.org/packages/adilazhari/laravel-trace"><img src="https://badge.laravel.cloud/badge/adilazhari/laravel-trace?style=flat" alt="Laravel versions"></a>
-    <a href="https://github.com/adilazhari/laravel-trace/actions"><img alt="GitHub Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/adilazhari/laravel-trace/tests.yml?branch=main&label=Tests&style=flat-square"></a>
+    <a href="https://github.com/AdilAzhariOmsan/laravel-trace/actions"><img alt="GitHub Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/AdilAzhariOmsan/laravel-trace/tests.yml?branch=main&label=Tests&style=flat-square"></a>
     <a href="https://packagist.org/packages/adilazhari/laravel-trace"><img src="https://img.shields.io/packagist/dt/adilazhari/laravel-trace.svg?style=flat-square" alt="Total Downloads"></a>
 </p>
 
@@ -529,7 +529,7 @@ Please review [our security policy](.github/SECURITY.md) on how to report securi
 
 ## Credits
 
-- [Adil Azhari](https://github.com/adilazhari)
+- [Adil Azhari](https://github.com/AdilAzhariOmsan)
 - [All Contributors](../../contributors)
 
 ## License
