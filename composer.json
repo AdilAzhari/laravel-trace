@@ -1,10 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "adilazhari/laravel-trace",
-    "description": "Application-level tracing for Laravel applications.",
+    "description": "Application-level tracing for Laravel: request, database-query and queued-job spans with context propagation and database storage.",
     "keywords": [
         "laravel",
-        "adilazhari",
+        "tracing",
+        "observability",
+        "distributed-tracing",
+        "spans",
+        "queues",
+        "monitoring",
         "laravel-trace"
     ],
     "homepage": "https://github.com/AdilAzhariOmsan/laravel-trace",
