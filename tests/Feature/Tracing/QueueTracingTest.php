@@ -2,16 +2,50 @@
 
 declare(strict_types=1);
 
+use AdilAzhari\LaravelTrace\Context\TraceContext;
 use AdilAzhari\LaravelTrace\Contracts\Tracer;
 use AdilAzhari\LaravelTrace\Http\Middleware\TraceRequest;
+use AdilAzhari\LaravelTrace\Span\Span;
 use AdilAzhari\LaravelTrace\Span\SpanStatus;
 use AdilAzhari\LaravelTrace\Span\SpanType;
+use AdilAzhari\LaravelTrace\Tests\Fixtures\Jobs\DispatchesSyncJob;
 use AdilAzhari\LaravelTrace\Tests\Fixtures\Jobs\FailingJob;
 use AdilAzhari\LaravelTrace\Tests\Fixtures\Jobs\TracedJob;
 use AdilAzhari\LaravelTrace\Tracing\InMemorySpanRecorder;
 use AdilAzhari\LaravelTrace\Tracing\InMemoryTraceRecorder;
 use Illuminate\Contracts\Queue\Factory as QueueFactory;
+use Illuminate\Queue\CallQueuedHandler;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Jobs\SyncJob;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Queue;
+
+/**
+ * @return Collection<int, Span>
+ */
+function queueJobSpans(): Collection
+{
+    return collect(app(InMemorySpanRecorder::class)->all())
+        ->where('name', 'queue.job')
+        ->values();
+}
+
+/**
+ * A job as a queue worker receives it: the payload carries the trace context
+ * captured at dispatch, but it runs on a non-sync connection with no context
+ * active beforehand.
+ */
+function workerJobCarrying(?TraceContext $context): SyncJob
+{
+    return new SyncJob(app(), (string) json_encode([
+        'job' => CallQueuedHandler::class.'@call',
+        'displayName' => TracedJob::class,
+        'data' => [],
+        'laravel-trace' => $context?->toArray(),
+    ]), 'redis', 'default');
+}
 
 it('records a span when a queued job is processed', function (): void {
     $tracer = app(Tracer::class);
@@ -62,10 +96,14 @@ it('does not record job spans when queue tracing is disabled', function (): void
 
     $tracer->start('QueueTest');
 
+    $callerContext = $tracer->context();
+
     app(QueueFactory::class)->connection('sync')->push(new TracedJob);
 
     expect(collect(app(InMemorySpanRecorder::class)->all())->firstWhere('name', 'queue.job'))
-        ->toBeNull();
+        ->toBeNull()
+        ->and($tracer->context())
+        ->toEqual($callerContext);
 });
 
 it('treats a string "false" the same as boolean false for queue.enabled', function (): void {
@@ -88,7 +126,9 @@ it('does not record job spans when there is no active trace', function (): void 
     app(QueueFactory::class)->connection('sync')->push(new TracedJob);
 
     expect(app(InMemorySpanRecorder::class)->all())
-        ->toBeEmpty();
+        ->toBeEmpty()
+        ->and(app(Tracer::class)->context())
+        ->toBeNull();
 });
 
 it('includes trace context in the queued job payload', function (): void {
@@ -167,30 +207,154 @@ it('restores trace context from the queue payload', function (): void {
     $parent->close();
 });
 
-it('does not leak queue trace context after a job is processed', function (): void {
+it('restores the caller trace context after a sync job is processed', function (): void {
     $tracer = app(Tracer::class);
 
-    $tracer->start('QueueTest');
+    $trace = $tracer->start('QueueTest');
 
-    app(QueueFactory::class)
-        ->connection('sync')
-        ->push(new TracedJob);
+    $callerContext = $tracer->context();
 
-    expect($tracer->context())
-        ->toBeNull();
+    dispatch_sync(new TracedJob);
+
+    expect(queueJobSpans())->toHaveCount(1)
+        ->and($tracer->context())->toEqual($callerContext);
+
+    $after = $tracer->span(name: 'after.job', type: SpanType::Action);
+
+    expect($after->span()->traceId->value)->toBe($trace->id->value)
+        ->and($after->span()->parentId)->toBeNull();
+
+    $after->close();
 });
 
-it('does not leak queue trace context after a job fails', function (): void {
+it('restores the caller trace context after a sync job fails', function (): void {
+    $tracer = app(Tracer::class);
+
+    $trace = $tracer->start('QueueTest');
+
+    $caller = $tracer->span(name: 'caller', type: SpanType::Action);
+
+    $callerContext = $tracer->context();
+
+    expect(fn () => dispatch_sync(new FailingJob))
+        ->toThrow(RuntimeException::class, 'Job failed.');
+
+    expect(queueJobSpans()->first()?->status)->toBe(SpanStatus::Failed)
+        ->and($tracer->context())->toEqual($callerContext);
+
+    $after = $tracer->span(name: 'after.job', type: SpanType::Action);
+
+    expect($after->span()->traceId->value)->toBe($trace->id->value)
+        ->and($after->span()->parentId?->value)->toBe($caller->span()->id->value);
+
+    $after->close();
+    $caller->close();
+});
+
+it('parents a sync job to the caller span and restores that span afterwards', function (): void {
     $tracer = app(Tracer::class);
 
     $tracer->start('QueueTest');
 
-    expect(fn () => app(QueueFactory::class)
-        ->connection('sync')
-        ->push(new FailingJob))
-        ->toThrow(RuntimeException::class, 'Job failed.')
-        ->and($tracer->context())
-        ->toBeNull();
+    $caller = $tracer->span(name: 'caller', type: SpanType::Action);
+
+    dispatch_sync(new TracedJob);
+
+    expect(queueJobSpans()->first()?->parentId?->value)->toBe($caller->span()->id->value)
+        ->and($tracer->context()?->spanId?->value)->toBe($caller->span()->id->value);
+
+    $after = $tracer->span(name: 'after.job', type: SpanType::Action);
+
+    expect($after->span()->parentId?->value)->toBe($caller->span()->id->value);
+
+    $after->close();
+    $caller->close();
+});
+
+it('traces every sync job dispatched sequentially under one caller', function (): void {
+    $tracer = app(Tracer::class);
+
+    $tracer->start('QueueTest');
+
+    $caller = $tracer->span(name: 'caller', type: SpanType::Action);
+
+    $callerContext = $tracer->context();
+
+    dispatch_sync(new TracedJob);
+
+    expect($tracer->context())->toEqual($callerContext);
+
+    dispatch_sync(new TracedJob);
+
+    expect($tracer->context())->toEqual($callerContext)
+        ->and(queueJobSpans())->toHaveCount(2)
+        ->and(queueJobSpans()->map(fn (Span $span): ?string => $span->parentId?->value)->all())
+        ->toBe([$caller->span()->id->value, $caller->span()->id->value]);
+
+    $caller->close();
+});
+
+it('restores each enclosing context when a sync job dispatches another sync job', function (): void {
+    DispatchesSyncJob::$contextBeforeInner = null;
+    DispatchesSyncJob::$contextAfterInner = null;
+
+    $tracer = app(Tracer::class);
+
+    $tracer->start('QueueTest');
+
+    $caller = $tracer->span(name: 'caller', type: SpanType::Action);
+
+    $callerContext = $tracer->context();
+
+    dispatch_sync(new DispatchesSyncJob);
+
+    $outer = queueJobSpans()->first(fn (Span $span): bool => $span->attributes['queue.job'] === DispatchesSyncJob::class);
+    $inner = queueJobSpans()->first(fn (Span $span): bool => $span->attributes['queue.job'] === TracedJob::class);
+
+    expect($outer?->parentId?->value)->toBe($caller->span()->id->value)
+        ->and($inner?->parentId?->value)->toBe($outer?->id->value)
+        ->and(DispatchesSyncJob::$contextBeforeInner?->spanId?->value)->toBe($outer?->id->value)
+        ->and(DispatchesSyncJob::$contextAfterInner)->toEqual(DispatchesSyncJob::$contextBeforeInner)
+        ->and($tracer->context())->toEqual($callerContext);
+
+    $caller->close();
+});
+
+it('leaves no trace context behind after a worker job is processed', function (): void {
+    $tracer = app(Tracer::class);
+
+    $trace = $tracer->start('QueueTest');
+
+    $job = workerJobCarrying($tracer->context());
+
+    $tracer->clearContext();
+
+    event(new JobProcessing('redis', $job));
+
+    expect($tracer->context()?->traceId->value)->toBe($trace->id->value);
+
+    event(new JobProcessed('redis', $job));
+
+    expect(queueJobSpans()->first()?->status)->toBe(SpanStatus::Completed)
+        ->and(queueJobSpans()->first()?->traceId->value)->toBe($trace->id->value)
+        ->and($tracer->context())->toBeNull();
+});
+
+it('leaves no trace context behind after a worker job fails', function (): void {
+    $tracer = app(Tracer::class);
+
+    $tracer->start('QueueTest');
+
+    $job = workerJobCarrying($tracer->context());
+
+    $tracer->clearContext();
+
+    event(new JobProcessing('redis', $job));
+
+    event(new JobExceptionOccurred('redis', $job, new RuntimeException('Job failed.')));
+
+    expect(queueJobSpans()->first()?->status)->toBe(SpanStatus::Failed)
+        ->and($tracer->context())->toBeNull();
 });
 
 it('traces a synchronous job dispatched during an http request', function (): void {

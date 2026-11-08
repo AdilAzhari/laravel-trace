@@ -21,9 +21,14 @@ final class QueueJobListener
     private array $scopes = [];
 
     /**
-     * @var array<int, bool>
+     * The context that was active before a job's payload context was
+     * injected, keyed by job. Restored once the job finishes, so a sync
+     * job hands the caller its context back and a worker job leaves none
+     * behind. The value may legitimately be null.
+     *
+     * @var array<int, TraceContext|null>
      */
-    private array $injectedContexts = [];
+    private array $previousContexts = [];
 
     public function __construct(
         private readonly Tracer $tracer,
@@ -40,7 +45,7 @@ final class QueueJobListener
 
         $scope?->close();
 
-        $this->clearInjectedContext($key);
+        $this->restorePreviousContext($key);
     }
 
     public function handleException(JobExceptionOccurred $event): void
@@ -53,18 +58,26 @@ final class QueueJobListener
 
         $scope?->fail($event->exception);
 
-        $this->clearInjectedContext($key);
+        $this->restorePreviousContext($key);
     }
 
-    private function clearInjectedContext(int $key): void
+    private function restorePreviousContext(int $key): void
     {
-        if (($this->injectedContexts[$key] ?? false) !== true) {
+        if (! array_key_exists($key, $this->previousContexts)) {
+            return;
+        }
+
+        $previous = $this->previousContexts[$key];
+
+        unset($this->previousContexts[$key]);
+
+        if ($previous !== null) {
+            $this->tracer->setContext($previous);
+
             return;
         }
 
         $this->tracer->clearContext();
-
-        unset($this->injectedContexts[$key]);
     }
 
     public function handleProcessing(JobProcessing $event): void
@@ -78,11 +91,11 @@ final class QueueJobListener
         $context = $event->job->payload()['laravel-trace'] ?? null;
 
         if ($context !== null) {
+            $this->previousContexts[$key] = $this->tracer->context();
+
             $this->tracer->setContext(
                 TraceContext::fromArray($context),
             );
-
-            $this->injectedContexts[$key] = true;
         }
 
         if ($this->tracer->context() === null) {
